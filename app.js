@@ -161,8 +161,7 @@ async function renderCiclo() {
     const desdeSQL = document.getElementById("ciclo-desde").value;
     const hastaSQL = document.getElementById("ciclo-hasta").value;
 
-    document.getElementById("rango-badge").textContent =
-        `${formatDate(desdeSQL)} al ${formatDate(hastaSQL)}`;
+    document.getElementById("rango-badge").textContent = `${formatDate(desdeSQL)} al ${formatDate(hastaSQL)}`;
 
     const { data, error } = await db
         .from("soportes")
@@ -171,41 +170,52 @@ async function renderCiclo() {
         .lte("fecha", hastaSQL)
         .order("fecha", { ascending: false });
 
-    if (error) {
-        console.error(error);
-        return;
-    }
+    if (error) { console.error(error); return; }
+
+    // LÓGICA DE AGRUPACIÓN POR FECHA
+    const agrupados = {};
+    (data || []).forEach(item => {
+        if (!agrupados[item.fecha]) {
+            agrupados[item.fecha] = { cantidad: 0, ids: [] };
+        }
+        agrupados[item.fecha].cantidad += item.cantidad;
+        agrupados[item.fecha].ids.push(item.id);
+    });
 
     const tabla = document.getElementById("tabla-soportes");
     tabla.innerHTML = "";
-    let total = 0;
+    let totalGlobal = 0;
 
-    (data || []).forEach(item => {
-        total += item.cantidad;
-
+    // Renderizar filas únicas por fecha
+    Object.keys(agrupados).sort((a, b) => new Date(b) - new Date(a)).forEach(fecha => {
+        const item = agrupados[fecha];
+        totalGlobal += item.cantidad;
+        
         tabla.innerHTML += `
             <tr>
-                <td>${formatDate(item.fecha)}</td>
+                <td class="text-nowrap">${formatDate(fecha)}</td>
                 <td><strong>${item.cantidad}</strong></td>
-                <td class="text-success">${formatMoney(item.cantidad * TARIFA)}</td>
-                <td>${item.a_cobrar ? '<span class="badge bg-warning text-dark">Sí</span>' : '<span class="badge bg-secondary">No</span>'}</td>
-                <td>${formatMoney(item.precio_servicio)}</td>
-                <td>${item.num_factura || "-"}</td>
+                <td class="text-secondary">Agrupado</td>
+                <td>-</td>
+                <td>-</td>
                 <td>
-                    <button class="btn btn-outline-danger btn-sm" onclick="eliminarSoporte(${item.id})">❌</button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="eliminarSoporteGrupo('${item.ids.join(',')}')">❌</button>
                 </td>
             </tr>
         `;
     });
 
-    document.getElementById("total-soportes").textContent = total;
+    document.getElementById("total-soportes").textContent = totalGlobal;
+    document.getElementById("rango").textContent = `${formatDate(desdeSQL)} - ${formatDate(hastaSQL)}`;
 }
 
-window.eliminarSoporte = async function (id) {
-    if (!confirm("¿Eliminar soporte?")) return;
-
-    await db.from("soportes").delete().eq("id", id);
-
+window.eliminarSoporteGrupo = async function (idsString) {
+    if (!confirm("¿Eliminar todos los soportes de esta fecha?")) return;
+    
+    const ids = idsString.split(',');
+    for (const id of ids) {
+        await db.from("soportes").delete().eq("id", id);
+    }
     renderCiclo();
     initMes();
     renderFinanzas();
