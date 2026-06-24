@@ -157,6 +157,9 @@ async function guardarSoporte(e) {
     renderFinanzas();
 }
 
+// ... (Mantén tu configuración de Supabase, TARIFA, y funciones de utilidades) ...
+
+// Actualización de renderCiclo con los nuevos botones
 async function renderCiclo() {
     const desdeSQL = document.getElementById("ciclo-desde").value;
     const hastaSQL = document.getElementById("ciclo-hasta").value;
@@ -172,42 +175,115 @@ async function renderCiclo() {
 
     if (error) { console.error(error); return; }
 
-    // LÓGICA DE AGRUPACIÓN POR FECHA
+    // LÓGICA DE AGRUPACIÓN (Ahora recolecta facturas y precios)
     const agrupados = {};
     (data || []).forEach(item => {
         if (!agrupados[item.fecha]) {
-            agrupados[item.fecha] = { cantidad: 0, ids: [] };
+            agrupados[item.fecha] = { 
+                cantidad: 0, 
+                ids: [], 
+                precios: [], 
+                facturas: [] 
+            };
         }
         agrupados[item.fecha].cantidad += item.cantidad;
         agrupados[item.fecha].ids.push(item.id);
+        
+        // Solo guardamos si tienen valor
+        if (item.precio_servicio > 0) agrupados[item.fecha].precios.push(formatMoney(item.precio_servicio));
+        if (item.num_factura && item.num_factura.trim() !== "") agrupados[item.fecha].facturas.push(item.num_factura);
     });
 
     const tabla = document.getElementById("tabla-soportes");
     tabla.innerHTML = "";
     let totalGlobal = 0;
 
-    // Renderizar filas únicas por fecha
+    // Renderizar filas
     Object.keys(agrupados).sort((a, b) => new Date(b) - new Date(a)).forEach(fecha => {
         const item = agrupados[fecha];
         totalGlobal += item.cantidad;
         
+        // Unir precios y facturas con comas si hay varios
+        const listaPrecios = item.precios.length > 0 ? item.precios.join(", ") : "-";
+        const listaFacturas = item.facturas.length > 0 ? item.facturas.join(", ") : "-";
+        
         tabla.innerHTML += `
             <tr>
-                <td class="text-nowrap">${formatDate(fecha)}</td>
+                <td>${formatDate(fecha)}</td>
                 <td><strong>${item.cantidad}</strong></td>
-                <td class="text-secondary">Agrupado</td>
-                <td>-</td>
-                <td>-</td>
+                <td>${listaPrecios}</td>
+                <td>${listaFacturas}</td>
                 <td>
-                    <button class="btn btn-outline-danger btn-sm" onclick="eliminarSoporteGrupo('${item.ids.join(',')}')">❌</button>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-success" onclick="ajustarCantidad('${fecha}', 1)">+</button>
+                        <button class="btn btn-outline-warning" onclick="ajustarCantidad('${fecha}', -1)">-</button>
+                        <button class="btn btn-outline-danger" onclick="eliminarSoporteGrupo('${item.ids.join(',')}')">❌</button>
+                    </div>
                 </td>
             </tr>
         `;
     });
 
     document.getElementById("total-soportes").textContent = totalGlobal;
-    document.getElementById("rango").textContent = `${formatDate(desdeSQL)} - ${formatDate(hastaSQL)}`;
 }
+
+// NUEVA FUNCIÓN: Sumar o Restar cantidad
+window.ajustarCantidad = async function(fecha, cambio) {
+    if (cambio > 0) {
+        // Agregar uno nuevo
+        await db.from("soportes").insert([{ fecha: fecha, cantidad: 1, a_cobrar: false }]);
+    } else {
+        // Buscar uno existente y borrarlo
+        const { data } = await db.from("soportes").select("id").eq("fecha", fecha).limit(1);
+        if (data && data.length > 0) {
+            await db.from("soportes").delete().eq("id", data[0].id);
+        }
+    }
+    renderCiclo();
+    initMes();
+    renderFinanzas();
+};
+
+// NUEVA FUNCIÓN: Correo filtrado
+document.getElementById("btn-enviar-facturado").addEventListener("click", procesarEnvioFacturado);
+
+// Añade esta nueva función en tu app.js
+async function procesarEnvioFacturado() {
+    const desdeSQL = document.getElementById("ciclo-desde").value;
+    const hastaSQL = document.getElementById("ciclo-hasta").value;
+
+    // 1. Obtener todos los datos del rango actual
+    const { data, error } = await db
+        .from("soportes")
+        .select("*")
+        .gte("fecha", desdeSQL)
+        .lte("fecha", hastaSQL);
+
+    if (error) { alert("Error al obtener datos: " + error.message); return; }
+
+    // 2. Filtrar: solo los que tienen factura y precio > 0
+    const facturados = data.filter(s => s.precio_servicio > 0 && s.num_factura && s.num_factura.trim() !== "");
+
+    if (facturados.length === 0) {
+        alert("No hay soportes con factura y precio en este periodo.");
+        return;
+    }
+
+    // 3. Crear el cuerpo del correo
+    let total = 0;
+    let cuerpo = `Detalle de Facturación (${desdeSQL} al ${hastaSQL}):\n\n`;
+    
+    facturados.forEach(s => {
+        cuerpo += `Fecha: ${s.fecha} | Factura: ${s.num_factura} | Cantidad: ${s.cantidad} | Precio: Q${s.precio_servicio}\n`;
+        total += (s.cantidad * s.precio_servicio);
+    });
+    
+
+    // 4. Abrir cliente de correo
+    const mailtoLink = `mailto:rorosco@grupoprinter.com?subject=${encodeURIComponent("Facturado (" + desdeSQL + " al " + hastaSQL + ")")}&body=${encodeURIComponent(cuerpo)}`;
+    window.location.href = mailtoLink;
+}
+// ... (El resto de tus funciones initMes, renderFinanzas, etc. se mantienen igual)
 
 window.eliminarSoporteGrupo = async function (idsString) {
     if (!confirm("¿Eliminar todos los soportes de esta fecha?")) return;
