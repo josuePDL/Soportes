@@ -600,6 +600,7 @@ async function renderFinanzas() {
     const month = Number(document.getElementById("filtro-mes").value);
     const year = new Date().getFullYear();
 
+    // Rango del mes actual seleccionado
     const start = new Date(year, month, 1);
     const end = new Date(year, month + 1, 0);
 
@@ -610,89 +611,79 @@ async function renderFinanzas() {
         .lte("fecha", toSQLDate(end))
         .order("fecha", { ascending: true });
 
-    if (error) {
-        console.error(error);
-        return;
-    }
+    if (error) { console.error(error); return; }
 
     const tablaQ = document.getElementById("tabla-quincena");
     const tablaF = document.getElementById("tabla-finmes");
 
+    // Limpiamos las tablas
     tablaQ.innerHTML = "";
     tablaF.innerHTML = "";
 
     let totalQ = 0;
     let totalF = 0;
 
-    const ciclo = await calcularComisionCiclo(month);
+    // 1. Listas separadas para agrupar Ingresos arriba y Gastos abajo
+    let ingresosQ = [];
+    let gastosQ = [];
+    let ingresosF = [];
+    let gastosF = [];
 
-    tablaF.innerHTML += `
+    // 2. Calculamos los soportes (Este es el ingreso principal de fin de mes)
+    const ciclo = await calcularComisionCiclo(month);
+    totalF += ciclo.comision;
+    
+    const filaSoportes = `
         <tr class="table-primary">
             <td><strong>Soportes Realizados (${ciclo.soportes})</strong></td>
-            <td class="text-end"><strong>${formatMoney(ciclo.comision)}</strong></td>
+            <td class="text-end text-success"><strong>${formatMoney(ciclo.comision)}</strong></td>
             <td></td>
         </tr>
     `;
 
-    totalF += ciclo.comision;
-
+    // 3. Separamos los demás movimientos (Extras) en sus respectivas listas
     (data || []).forEach(mov => {
         const day = Number(mov.fecha.split("-")[2]);
         const isGasto = mov.tipo === "gasto";
-        const signed = isGasto
-            ? -Number(mov.monto)
-            : Number(mov.monto);
+        const signed = isGasto ? -Number(mov.monto) : Number(mov.monto);
+        const textClass = isGasto ? "text-danger" : "text-success";
 
-        const textClass = isGasto
-            ? "text-danger"
-            : "text-success";
-
-        const row = `
+        const fila = `
             <tr>
                 <td>${mov.descripcion}</td>
-                <td class="text-end ${textClass}">
-                    ${formatMoney(signed)}
-                </td>
+                <td class="text-end ${textClass}">${formatMoney(signed)}</td>
                 <td class="text-center">
-                    <button
-                        class="btn btn-outline-danger btn-sm p-0 px-2"
-                        onclick="eliminarGasto(${mov.id})"
-                    >
-                        ❌
-                    </button>
+                    <button class="btn btn-outline-danger btn-sm p-0 px-2" onclick="eliminarGasto(${mov.id})">❌</button>
                 </td>
             </tr>
         `;
 
         if (day <= 15) {
-            tablaQ.innerHTML += row;
             totalQ += signed;
+            if (isGasto) gastosQ.push(fila);
+            else ingresosQ.push(fila);
         } else {
-            tablaF.innerHTML += row;
             totalF += signed;
+            if (isGasto) gastosF.push(fila);
+            else ingresosF.push(fila);
         }
     });
 
-    tablaQ.innerHTML += `
+    // 4. Construimos las tablas en el orden correcto: 
+    // Quincena: Ingresos extras -> Gastos -> Total
+    tablaQ.innerHTML = ingresosQ.join("") + gastosQ.join("") + `
         <tr class="table-light">
             <td><strong class="fs-5">Total Neto</strong></td>
-            <td class="text-end">
-                <strong class="fs-5 ${totalQ < 0 ? "text-danger" : "text-success"}">
-                    ${formatMoney(totalQ)}
-                </strong>
-            </td>
+            <td class="text-end"><strong class="fs-5 ${totalQ < 0 ? 'text-danger' : 'text-success'}">${formatMoney(totalQ)}</strong></td>
             <td></td>
         </tr>
     `;
 
-    tablaF.innerHTML += `
+    // Fin de Mes: Soportes -> Ingresos extras -> Gastos -> Total
+    tablaF.innerHTML = filaSoportes + ingresosF.join("") + gastosF.join("") + `
         <tr class="table-light">
             <td><strong class="fs-5">Total Neto</strong></td>
-            <td class="text-end">
-                <strong class="fs-5 ${totalF < 0 ? "text-danger" : "text-success"}">
-                    ${formatMoney(totalF)}
-                </strong>
-            </td>
+            <td class="text-end"><strong class="fs-5 ${totalF < 0 ? 'text-danger' : 'text-success'}">${formatMoney(totalF)}</strong></td>
             <td></td>
         </tr>
     `;
