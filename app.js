@@ -490,27 +490,42 @@ function renderGraficaMesAnual() {
 }
 
 // ============================
-// FINANZAS
+// MÓDULO: FINANZAS
 // ============================
 function initFinanzas() {
     const filtro = document.getElementById("filtro-mes");
     const now = new Date();
 
-    filtro.innerHTML = "";
-
+    filtro.innerHTML = ""; 
     for (let i = 0; i < 12; i++) {
         filtro.innerHTML += `<option value="${i}">${monthName(i)}</option>`;
     }
-
     filtro.value = now.getMonth();
 
     const formFinanzas = document.getElementById("form-finanza");
-
     formFinanzas.removeEventListener("submit", guardarMovimiento);
     formFinanzas.addEventListener("submit", guardarMovimiento);
 
     filtro.removeEventListener("change", renderFinanzas);
     filtro.addEventListener("change", renderFinanzas);
+
+    // Lógica inteligente para el formulario
+    document.getElementById("tipo").addEventListener("change", function(e) {
+        const esSoporte = e.target.value === "pago_soportes";
+        const descInput = document.getElementById("descripcion");
+        const periodoInput = document.getElementById("periodo-movimiento");
+
+        if (esSoporte) {
+            descInput.value = "Comisiones por Soportes";
+            descInput.disabled = true; // Bloquea la descripción
+            periodoInput.value = "fin_mes";
+            periodoInput.disabled = true; // Bloquea el periodo (solo fin de mes)
+        } else {
+            descInput.value = "";
+            descInput.disabled = false;
+            periodoInput.disabled = false;
+        }
+    });
 
     renderFinanzas();
 }
@@ -518,159 +533,93 @@ function initFinanzas() {
 async function guardarMovimiento(e) {
     e.preventDefault();
 
-    const descripcion = document.getElementById("descripcion").value;
-    const monto = Number(document.getElementById("monto").value);
     const tipo = document.getElementById("tipo").value;
-    const periodo = document.getElementById("periodo-movimiento").value;
+    // Si los campos están bloqueados, tomamos su valor predeterminado
+    const descripcion = tipo === "pago_soportes" ? "Comisiones por Soportes" : document.getElementById("descripcion").value;
+    const periodo = tipo === "pago_soportes" ? "fin_mes" : document.getElementById("periodo-movimiento").value;
+    const monto = Number(document.getElementById("monto").value);
 
-    const mesSeleccionado = Number(
-        document.getElementById("filtro-mes").value
-    );
-
+    const mesSeleccionado = Number(document.getElementById("filtro-mes").value);
     const yearActual = new Date().getFullYear();
-    let fechaCalculada;
+    let fechaCalculada = (periodo === "quincena") 
+        ? toSQLDate(new Date(yearActual, mesSeleccionado, 15)) 
+        : toSQLDate(new Date(yearActual, mesSeleccionado + 1, 0));
 
-    if (periodo === "quincena") {
-        fechaCalculada = toSQLDate(
-            new Date(yearActual, mesSeleccionado, 15)
-        );
-    } else {
-        fechaCalculada = toSQLDate(
-            new Date(yearActual, mesSeleccionado + 1, 0)
-        );
-    }
-
-    const payload = {
-        fecha: fechaCalculada,
-        descripcion,
-        monto,
-        tipo
-    };
+    const payload = { fecha: fechaCalculada, descripcion, monto, tipo };
 
     const { error } = await db.from("gastos").insert([payload]);
+    if (error) { alert(error.message); return; }
 
-    if (error) {
-        alert(error.message);
-        return;
-    }
-
-    document.getElementById("descripcion").value = "";
     document.getElementById("monto").value = "";
+    if (tipo !== "pago_soportes") {
+        document.getElementById("descripcion").value = "";
+    }
 
     renderFinanzas();
-}
-
-async function calcularComisionCiclo(selectedMonth) {
-    const year = new Date().getFullYear();
-    let start;
-    let end;
-
-    if (selectedMonth === 0) {
-        start = new Date(year - 1, 11, 16);
-        end = new Date(year, 0, 15);
-    } else {
-        start = new Date(year, selectedMonth - 1, 16);
-        end = new Date(year, selectedMonth, 15);
-    }
-
-    const { data, error } = await db
-        .from("soportes")
-        .select("*")
-        .gte("fecha", toSQLDate(start))
-        .lte("fecha", toSQLDate(end));
-
-    if (error) {
-        console.error(error);
-        return { soportes: 0, comision: 0 };
-    }
-
-    let totalSoportes = 0;
-
-    (data || []).forEach(item => {
-        totalSoportes += item.cantidad;
-    });
-
-    return {
-        soportes: totalSoportes,
-        comision: totalSoportes * TARIFA
-    };
 }
 
 async function renderFinanzas() {
     const month = Number(document.getElementById("filtro-mes").value);
     const year = new Date().getFullYear();
 
-    // Rango del mes actual seleccionado
     const start = new Date(year, month, 1);
     const end = new Date(year, month + 1, 0);
 
     const { data, error } = await db
-        .from("gastos")
-        .select("*")
-        .gte("fecha", toSQLDate(start))
-        .lte("fecha", toSQLDate(end))
-        .order("fecha", { ascending: true });
+        .from("gastos").select("*").gte("fecha", toSQLDate(start)).lte("fecha", toSQLDate(end)).order("fecha", { ascending: true });
 
     if (error) { console.error(error); return; }
 
     const tablaQ = document.getElementById("tabla-quincena");
     const tablaF = document.getElementById("tabla-finmes");
 
-    // Limpiamos las tablas
-    tablaQ.innerHTML = "";
+    tablaQ.innerHTML = ""; 
     tablaF.innerHTML = "";
 
-    let totalQ = 0;
-    let totalF = 0;
+    let totalQ = 0, totalF = 0;
+    let ingresosQ = [], gastosQ = [], ingresosF = [], gastosF = [];
 
-    // 1. Listas separadas para agrupar Ingresos arriba y Gastos abajo
-    let ingresosQ = [];
-    let gastosQ = [];
-    let ingresosF = [];
-    let gastosF = [];
-
-    // 2. Calculamos los soportes (Este es el ingreso principal de fin de mes)
+    // Fila puramente informativa (Ya NO suma automáticamente al total)
     const ciclo = await calcularComisionCiclo(month);
-    totalF += ciclo.comision;
-    
-    const filaSoportes = `
-        <tr class="table-primary">
-            <td><strong>Soportes Realizados (${ciclo.soportes})</strong></td>
-            <td class="text-end text-success"><strong>${formatMoney(ciclo.comision)}</strong></td>
-            <td></td>
+    const filaInfoSoportes = `
+        <tr class="table-secondary text-muted">
+            <td colspan="3" class="text-center">
+                <small><em>Calculado por sistema: ${ciclo.soportes} soportes realizados (Aprox. ${formatMoney(ciclo.comision)})</em></small>
+            </td>
         </tr>
     `;
 
-    // 3. Separamos los demás movimientos (Extras) en sus respectivas listas
     (data || []).forEach(mov => {
         const day = Number(mov.fecha.split("-")[2]);
         const isGasto = mov.tipo === "gasto";
+        const isPagoSoportes = mov.tipo === "pago_soportes";
         const signed = isGasto ? -Number(mov.monto) : Number(mov.monto);
         const textClass = isGasto ? "text-danger" : "text-success";
+        
+        // Si es el pago de soportes real, lo resaltamos
+        const bgClass = isPagoSoportes ? "table-primary fw-bold" : "";
 
         const fila = `
-            <tr>
+            <tr class="${bgClass}">
                 <td>${mov.descripcion}</td>
                 <td class="text-end ${textClass}">${formatMoney(signed)}</td>
-                <td class="text-center">
-                    <button class="btn btn-outline-danger btn-sm p-0 px-2" onclick="eliminarGasto(${mov.id})">❌</button>
-                </td>
+                <td class="text-center"><button class="btn btn-outline-danger btn-sm p-0 px-2" onclick="eliminarGasto(${mov.id})">❌</button></td>
             </tr>
         `;
 
-        if (day <= 15) {
-            totalQ += signed;
-            if (isGasto) gastosQ.push(fila);
-            else ingresosQ.push(fila);
-        } else {
-            totalF += signed;
-            if (isGasto) gastosF.push(fila);
-            else ingresosF.push(fila);
+        if (day <= 15) { 
+            totalQ += signed; 
+            if (isGasto) gastosQ.push(fila); else ingresosQ.push(fila); 
+        } else { 
+            totalF += signed; 
+            // Aseguramos que el pago de soportes quede siempre hasta arriba en ingresos
+            if (isPagoSoportes) ingresosF.unshift(fila); 
+            else if (isGasto) gastosF.push(fila); 
+            else ingresosF.push(fila); 
         }
     });
 
-    // 4. Construimos las tablas en el orden correcto: 
-    // Quincena: Ingresos extras -> Gastos -> Total
+    // Ensamblaje Quincena
     tablaQ.innerHTML = ingresosQ.join("") + gastosQ.join("") + `
         <tr class="table-light">
             <td><strong class="fs-5">Total Neto</strong></td>
@@ -679,8 +628,8 @@ async function renderFinanzas() {
         </tr>
     `;
 
-    // Fin de Mes: Soportes -> Ingresos extras -> Gastos -> Total
-    tablaF.innerHTML = filaSoportes + ingresosF.join("") + gastosF.join("") + `
+    // Ensamblaje Fin de Mes (Info del sistema -> Pago Real -> Ingresos extras -> Gastos)
+    tablaF.innerHTML = filaInfoSoportes + ingresosF.join("") + gastosF.join("") + `
         <tr class="table-light">
             <td><strong class="fs-5">Total Neto</strong></td>
             <td class="text-end"><strong class="fs-5 ${totalF < 0 ? 'text-danger' : 'text-success'}">${formatMoney(totalF)}</strong></td>
@@ -691,16 +640,7 @@ async function renderFinanzas() {
 
 window.eliminarGasto = async function (id) {
     if (!confirm("¿Eliminar movimiento?")) return;
-
-    const { error } = await db
-        .from("gastos")
-        .delete()
-        .eq("id", id);
-
-    if (error) {
-        alert(error.message);
-        return;
-    }
-
+    const { error } = await db.from("gastos").delete().eq("id", id);
+    if (error) { alert(error.message); return; }
     renderFinanzas();
 };
