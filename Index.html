@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Soportes - Panel Unificado</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        table td, table th { border: none !important; vertical-align: middle; }
+        html { scroll-padding-top: 80px; }
+        .card-header-toggle { cursor: pointer; user-select: none; }
+    </style>
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-dark sticky-top mb-4 shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="#">Sistema Soportes</a>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-light btn-sm" href="#seccion-ciclo">Ciclo</a>
+            <a class="btn btn-outline-light btn-sm" href="#seccion-mes">Estadísticas</a>
+            <a class="btn btn-outline-light btn-sm" href="#seccion-finanzas">Finanzas</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container pb-5">
+
+    <div class="card shadow-sm mb-4" id="seccion-ciclo">
+        <div class="card-header bg-primary text-white card-header-toggle d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapseCiclo" aria-expanded="true">
+            <h4 class="mb-0">Ciclo</h4>
+            <span>▼</span>
+        </div>
+        <div id="collapseCiclo" class="collapse show">
+            <div class="card-body">
+                <div class="p-3 border rounded mb-4 bg-white shadow-sm">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <button id="btn-ciclo-anterior" class="btn btn-outline-primary btn-sm">◀ Ant.</button>
+                            <span id="rango-badge" class="badge bg-primary fs-6 py-2 px-3">Cargando...</span>
+                            <button id="btn-ciclo-siguiente" class="btn btn-outline-primary btn-sm">Sig. ▶</button>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="date" id="ciclo-desde" class="form-control form-control-sm">
+                            <span>a</span>
+                            <input type="date" id="ciclo-hasta" class="form-control form-control-sm">
+                            <button id="btn-filtrar-ciclo" class="btn btn-sm btn-secondary">Filtrar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="form-soporte" class="border p-3 rounded mb-4 bg-white">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-4"><label class="fw-bold">Fecha</label><input id="fecha" type="date" class="form-control"></div>
+                        <div class="col-12 col-md-4"><label class="fw-bold">Cantidad</label><input id="cantidad" type="number" class="form-control" required></div>
+                        <div class="col-12 col-md-4"><label class="fw-bold">¿Es a cobrar?</label><select id="a-cobrar" class="form-select"><option value="false">No</option><option value="true">Sí</option></select></div>
+                    </div>
+                    <div id="bloque-cobro" class="mt-3 d-none">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6"><label class="fw-bold">Precio</label><select id="precio-servicio" class="form-select"><option value="175">Q175</option><option value="310">Q310</option></select></div>
+                            <div class="col-12 col-md-6"><label class="fw-bold">Factura</label><input id="num-factura" class="form-control"></div>
+                        </div>
+                    </div>
+                    <button class="btn btn-success mt-3 w-100 fw-bold">Guardar Soporte</button>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Cantidad</th>
+                                <th>Precio(s)</th>
+                                <th>Factura(s)</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-soportes"></tbody>
+                    </table>
+                </div>
+
+                <div class="mt-4 p-3 border-top">
+                    <button id="btn-enviar-facturado" class="btn btn-warning w-100 fw-bold shadow-sm">📧 Enviar Facturado (Periodo Actual)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4" id="seccion-mes">
+        <div class="card-header bg-secondary text-white card-header-toggle d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapseMes" aria-expanded="true">
+            <h4 class="mb-0">Estadísticas del Mes</h4>
+            <span>▼</span>
+        </div>
+        <div id="collapseMes" class="collapse show">
+            <div class="card-body">
+                <div class="text-center mb-3"><h2 id="nombre-mes" class="mb-0">Mes</h2></div>
+                <div class="row mb-4 g-3 justify-content-center">
+                    <div class="col-12 col-sm-6 col-md-5">
+                        <div class="p-4 text-center border rounded shadow-sm bg-white"><h6 class="text-muted text-uppercase fw-bold">Soportes Realizados</h6><h1 id="total-soportes-mes" class="display-4 text-primary mb-0 fw-bold">0</h1><span id="comparacion-mes" class="badge bg-secondary mt-2">...</span></div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-5">
+                        <div class="p-4 text-center border rounded shadow-sm bg-white"><h6 class="text-muted text-uppercase fw-bold">Faltan para la Meta</h6><h1 id="total-faltantes-mes" class="display-4 text-secondary mb-0 fw-bold">100</h1></div>
+                    </div>
+                </div>
+                <div class="p-3 border rounded bg-white shadow-sm"><canvas id="grafica-mes"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm" id="seccion-finanzas">
+        <div class="card-header bg-dark text-white card-header-toggle d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapseFinanzas" aria-expanded="true">
+            <h4 class="mb-0">Finanzas (Tiempo Real)</h4>
+            <span>▼</span>
+        </div>
+        <div id="collapseFinanzas" class="collapse show">
+            <div class="card-body">
+                <select id="filtro-mes" class="form-select mb-4"></select>
+                <form id="form-finanza" class="border p-3 rounded mb-4 bg-white shadow-sm">
+                    <div class="row g-2">
+                        <div class="col-md-3"><select id="periodo-movimiento" class="form-select"><option value="quincena">Quincena</option><option value="fin_mes">Fin Mes</option></select></div>
+                        <div class="col-md-4"><input id="descripcion" class="form-control" placeholder="Desc." required></div>
+                        <div class="col-md-2"><input id="monto" type="number" step="0.01" class="form-control" placeholder="Q" required></div>
+                        <div class="col-md-2"><select id="tipo" class="form-select"><option value="gasto">Gasto</option><option value="ingreso">Ingreso extra</option><option value="pago_soportes">Pago de Soportes</option></select></div>
+                        <div class="col-md-1"><button class="btn btn-dark w-100">✚</button></div>
+                    </div>
+                </form>
+                <div class="row g-4">
+                    <div class="col-md-6"><h5 class="text-primary">Quincena</h5><table class="table"><tbody id="tabla-quincena"></tbody></table></div>
+                    <div class="col-md-6"><h5 class="text-primary">Fin de Mes</h5><table class="table"><tbody id="tabla-finmes"></tbody></table></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="app.js"></script>
+</body>
+  </html>
+  
