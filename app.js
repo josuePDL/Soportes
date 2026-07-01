@@ -6,6 +6,7 @@ const db = supabase.createClient(
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRiaGVyZmFseHRkcHVla2RxdXNvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0ODY5NTgsImV4cCI6MjA5MzA2Mjk1OH0.ERCeSP2s_0LfPGL5FYy-dKbMIlyRt8Gvg8aZ47DgITA'
 );
 
+
 let graficaMes = null;
 
 // ============================
@@ -21,8 +22,8 @@ const formatMoney = (amount) => `Q${Number(amount).toFixed(2)}`;
 const toSQLDate = (date) => date.toISOString().split("T")[0];
 
 const monthName = (idx) => [
-    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+    "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
 ][idx];
 
 // ============================
@@ -146,7 +147,6 @@ async function guardarSoporte(e) {
 
     renderCiclo();
     renderEstadisticas();
-    renderFinanzas();
 }
 
 async function renderCiclo() {
@@ -164,7 +164,6 @@ async function renderCiclo() {
         .order("fecha", { ascending: false });
 
     const agrupados = {};
-
     (data || []).forEach(item => {
         if (!agrupados[item.fecha]) {
             agrupados[item.fecha] = {
@@ -189,7 +188,6 @@ async function renderCiclo() {
 
     const tabla = document.getElementById("tabla-soportes");
     tabla.innerHTML = "";
-
     Object.keys(agrupados)
         .sort((a, b) => new Date(b) - new Date(a))
         .forEach(fecha => {
@@ -230,67 +228,15 @@ window.ajustarCantidad = async (fecha, cambio) => {
 
     renderCiclo();
     renderEstadisticas();
-    renderFinanzas();
 };
 
 window.eliminarSoporteGrupo = async (idsString) => {
     if (!confirm("¿Eliminar registros?")) return;
-
     await db.from("soportes").delete().in("id", idsString.split(","));
-
     renderCiclo();
     renderEstadisticas();
-    renderFinanzas();
 };
 
-window.enviarCorreoFecha = async (fecha) => {
-    const { data } = await db.from("soportes").select("*").eq("fecha", fecha);
-
-    let cuerpo = `Soportes ${fecha}\n\n`;
-
-    data.forEach(s => {
-        cuerpo += `Cantidad: ${s.cantidad}`;
-        if (s.precio_servicio) cuerpo += ` | Q${s.precio_servicio}`;
-        if (s.num_factura) cuerpo += ` | Factura: ${s.num_factura}`;
-        cuerpo += "\n";
-    });
-
-    window.location.href =
-        `mailto:rorosco@grupoprinter.com?subject=${encodeURIComponent("Soportes " + fecha)}&body=${encodeURIComponent(cuerpo)}`;
-};
-
-async function procesarEnvioFacturado() {
-    const desde = document.getElementById("ciclo-desde").value;
-    const hasta = document.getElementById("ciclo-hasta").value;
-
-    const { data } = await db
-        .from("soportes")
-        .select("*")
-        .gte("fecha", desde)
-        .lte("fecha", hasta);
-
-    const facturados = data.filter(
-        s => s.precio_servicio > 0 && s.num_factura
-    );
-
-    if (!facturados.length) {
-        alert("No hay facturados");
-        return;
-    }
-
-    let total = 0;
-    let cuerpo = "";
-
-    facturados.forEach(s => {
-        cuerpo += `${s.fecha} | ${s.num_factura} | Q${s.precio_servicio}\n`;
-        total += Number(s.precio_servicio);
-    });
-
-    cuerpo += `\nTotal: Q${total.toFixed(2)}`;
-
-    window.location.href =
-        `mailto:rorosco@grupoprinter.com?subject=Facturado&body=${encodeURIComponent(cuerpo)}`;
-}
 // ============================
 // FINANZAS
 // ============================
@@ -330,55 +276,13 @@ async function guardarMovimiento(e) {
     };
 
     await db.from("gastos").insert([payload]);
-
     document.getElementById("form-finanza").reset();
-
     renderFinanzas();
-}
-
-async function crearPagoSoportesAutomatico(month, year) {
-    const cicloDesde = toSQLDate(new Date(year, month - 1, 16));
-    const cicloHasta = toSQLDate(new Date(year, month, 15));
-
-    const { data: soportes } = await db
-        .from("soportes")
-        .select("cantidad")
-        .gte("fecha", cicloDesde)
-        .lte("fecha", cicloHasta);
-
-    let totalSoportes = 0;
-
-    (soportes || []).forEach(s => {
-        totalSoportes += Number(s.cantidad || 0);
-    });
-
-    const pago = totalSoportes * 14.5;
-
-    if (pago <= 0) return;
-
-    const fechaPago = toSQLDate(new Date(year, month, 30));
-
-    const { data: existente } = await db
-        .from("gastos")
-        .select("*")
-        .eq("tipo", "pago_soportes_auto")
-        .eq("fecha", fechaPago);
-
-    if (existente?.length) return;
-
-    await db.from("gastos").insert([{
-        fecha: fechaPago,
-        descripcion: `Pago soportes (${totalSoportes} x 14.50)`,
-        monto: pago,
-        tipo: "pago_soportes_auto"
-    }]);
 }
 
 async function renderFinanzas() {
     const month = Number(document.getElementById("filtro-mes").value);
     const year = new Date().getFullYear();
-
-    await crearPagoSoportesAutomatico(month, year);
 
     const { data } = await db
         .from("gastos")
@@ -402,26 +306,18 @@ async function renderFinanzas() {
 
     (data || []).forEach(mov => {
         const day = Number(mov.fecha.split("-")[2]);
-
-        if (day <= 15) {
-            quincena.push(mov);
-        } else {
-            finMes.push(mov);
-        }
+        if (day <= 15) quincena.push(mov);
+        else finMes.push(mov);
     });
 
     function renderTabla(lista, tabla, esQuincena = true) {
-        const ingresosExtra = lista.filter(x => x.tipo === "ingreso");
+        const ingresos = lista.filter(x => x.tipo === "ingreso");
         const planillas = lista.filter(x => x.tipo === "planilla");
-        const pagosSoportes = lista.filter(
-            x => x.tipo === "pago_soportes" || x.tipo === "pago_soportes_auto"
-        );
         const gastos = lista.filter(x => x.tipo === "gasto");
 
         const ordenados = [
-            ...ingresosExtra,
+            ...ingresos,
             ...planillas,
-            ...pagosSoportes,
             ...gastos
         ];
 
@@ -545,4 +441,3 @@ async function renderEstadisticas() {
         }
     });
 }
-
