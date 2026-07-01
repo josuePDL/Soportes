@@ -237,6 +237,39 @@ window.eliminarSoporteGrupo = async (idsString) => {
     renderEstadisticas();
 };
 
+async function procesarEnvioFacturado() {
+    const desde = document.getElementById("ciclo-desde").value;
+    const hasta = document.getElementById("ciclo-hasta").value;
+
+    const { data } = await db
+        .from("soportes")
+        .select("*")
+        .gte("fecha", desde)
+        .lte("fecha", hasta);
+
+    const facturados = (data || []).filter(
+        s => s.precio_servicio > 0 && s.num_factura
+    );
+
+    if (!facturados.length) {
+        alert("No hay facturados");
+        return;
+    }
+
+    let total = 0;
+    let cuerpo = "";
+
+    facturados.forEach(s => {
+        cuerpo += `${s.fecha} | ${s.num_factura} | Q${s.precio_servicio}\n`;
+        total += Number(s.precio_servicio);
+    });
+
+    cuerpo += `\nTotal: Q${total.toFixed(2)}`;
+
+    window.location.href =
+        `mailto:rorosco@grupoprinter.com?subject=Facturado&body=${encodeURIComponent(cuerpo)}`;
+}
+
 // ============================
 // FINANZAS
 // ============================
