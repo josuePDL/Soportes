@@ -425,19 +425,21 @@ window.eliminarGasto = async (id) => {
 // ESTADÍSTICAS
 // ============================
 async function renderEstadisticas() {
-    const month = Number(document.getElementById("filtro-mes").value);
-    const year = new Date().getFullYear();
+    // Tomamos las fechas del selector de ciclo
+    const desdeSQL = document.getElementById("ciclo-desde").value;
+    const hastaSQL = document.getElementById("ciclo-hasta").value;
 
-    const inicioMes = toSQLDate(new Date(year, month, 1));
-    const finMes = toSQLDate(new Date(year, month + 1, 0));
+    if (!desdeSQL || !hastaSQL) return;
 
-    document.getElementById("nombre-mes").textContent = monthName(month);
+    // Actualizamos el título de la sección
+    document.getElementById("nombre-mes").textContent = 
+        `Ciclo: ${formatDate(desdeSQL)} al ${formatDate(hastaSQL)}`;
 
     const { data, error } = await db
         .from("soportes")
         .select("*")
-        .gte("fecha", inicioMes)
-        .lte("fecha", finMes);
+        .gte("fecha", desdeSQL)
+        .lte("fecha", hastaSQL);
 
     if (error) {
         console.error(error);
@@ -449,9 +451,8 @@ async function renderEstadisticas() {
 
     (data || []).forEach(item => {
         totalSoportes += Number(item.cantidad || 0);
-
-        const dia = Number(item.fecha.split("-")[2]);
-        soportesPorDia[dia] = (soportesPorDia[dia] || 0) + Number(item.cantidad || 0);
+        // Usamos la fecha completa para la clave del objeto y asegurar orden
+        soportesPorDia[item.fecha] = (soportesPorDia[item.fecha] || 0) + Number(item.cantidad || 0);
     });
 
     const meta = 100;
@@ -465,8 +466,9 @@ async function renderEstadisticas() {
             ? "Meta alcanzada ✅"
             : `Te faltan ${faltantes}`;
 
-    const labels = Object.keys(soportesPorDia).sort((a, b) => a - b);
-    const valores = labels.map(d => soportesPorDia[d]);
+    // Preparar datos para Chart.js
+    const labels = Object.keys(soportesPorDia).sort();
+    const valores = labels.map(f => soportesPorDia[f]);
 
     if (graficaMes) {
         graficaMes.destroy();
@@ -477,20 +479,17 @@ async function renderEstadisticas() {
     graficaMes = new Chart(ctx, {
         type: "bar",
         data: {
-            labels,
+            labels: labels.map(f => formatDate(f)), // Etiquetas legibles
             datasets: [{
                 label: "Soportes por día",
                 data: valores,
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
                 borderWidth: 1
             }]
         },
         options: {
             responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
+            scales: { y: { beginAtZero: true } }
         }
     });
 }
