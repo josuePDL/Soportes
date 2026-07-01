@@ -258,40 +258,49 @@ async function guardarMovimiento(e) {
     };
     await db.from("gastos").insert([payload]);
     renderFinanzas();
-}
-async function renderFinanzas() {
+}async function renderFinanzas() {
     const month = Number(document.getElementById("filtro-mes").value);
     const year = new Date().getFullYear();
+
     const { data } = await db
         .from("gastos")
         .select("*")
         .gte("fecha", toSQLDate(new Date(year, month, 1)))
         .lte("fecha", toSQLDate(new Date(year, month + 1, 0)));
+
     const tablaQ = document.getElementById("tabla-quincena");
     const tablaF = document.getElementById("tabla-finmes");
+
     tablaQ.innerHTML = "";
     tablaF.innerHTML = "";
+
     let totalIngresosQ = 0;
     let totalGastosQ = 0;
     let totalIngresosF = 0;
     let totalGastosF = 0;
+
     const quincena = [];
     const finMes = [];
+
     (data || []).forEach(mov => {
         const day = Number(mov.fecha.split("-")[2]);
+
         if (day <= 15) {
             quincena.push(mov);
         } else {
             finMes.push(mov);
         }
     });
+
     function renderTabla(lista, tabla, esQuincena = true) {
         const ingresos = lista.filter(x => x.tipo !== "gasto");
         const gastos = lista.filter(x => x.tipo === "gasto");
         const ordenados = [...ingresos, ...gastos];
+
         ordenados.forEach(mov => {
             const isGasto = mov.tipo === "gasto";
             const monto = Number(mov.monto);
+
             if (esQuincena) {
                 if (isGasto) totalGastosQ += monto;
                 else totalIngresosQ += monto;
@@ -299,6 +308,7 @@ async function renderFinanzas() {
                 if (isGasto) totalGastosF += monto;
                 else totalIngresosF += monto;
             }
+
             tabla.innerHTML += `
                 <tr>
                     <td>${mov.descripcion}</td>
@@ -312,10 +322,45 @@ async function renderFinanzas() {
             `;
         });
     }
+
     renderTabla(quincena, tablaQ, true);
     renderTabla(finMes, tablaF, false);
+
+    // ===============================
+    // CALCULAR PAGO DE SOPORTES FIN DE MES
+    // Ciclo: 16 mes anterior -> 15 mes actual
+    // ===============================
+    const cicloDesde = toSQLDate(new Date(year, month - 1, 16));
+    const cicloHasta = toSQLDate(new Date(year, month, 15));
+
+    const { data: soportes } = await db
+        .from("soportes")
+        .select("cantidad")
+        .gte("fecha", cicloDesde)
+        .lte("fecha", cicloHasta);
+
+    let totalSoportes = 0;
+
+    (soportes || []).forEach(s => {
+        totalSoportes += Number(s.cantidad || 0);
+    });
+
+    const pagoSoportes = totalSoportes * 14.5;
+    totalIngresosF += pagoSoportes;
+
+    tablaF.innerHTML += `
+        <tr>
+            <td><strong>Pago Soportes (${totalSoportes} × Q14.50)</strong></td>
+            <td class="text-end text-success fw-bold">
+                +${formatMoney(pagoSoportes)}
+            </td>
+            <td></td>
+        </tr>
+    `;
+
     const balanceQ = totalIngresosQ - totalGastosQ;
     const balanceF = totalIngresosF - totalGastosF;
+
     tablaQ.innerHTML += `
         <tr class="table-dark">
             <td><strong>Total</strong></td>
@@ -323,6 +368,7 @@ async function renderFinanzas() {
             <td></td>
         </tr>
     `;
+
     tablaF.innerHTML += `
         <tr class="table-dark">
             <td><strong>Total</strong></td>
@@ -331,10 +377,6 @@ async function renderFinanzas() {
         </tr>
     `;
 }
-window.eliminarGasto = async (id) => {
-    await db.from("gastos").delete().eq("id", id);
-    renderFinanzas();
-};
 // ============================
 // ESTADÍSTICAS (por ciclo)
 // ============================
