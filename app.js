@@ -208,6 +208,8 @@ async function renderCiclo() {
                 </tr>
             `;
         });
+
+    renderEstadisticas();
 }
 
 window.ajustarCantidad = async (fecha, cambio) => {
