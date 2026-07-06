@@ -313,15 +313,29 @@ async function guardarMovimiento(e) {
     renderFinanzas();
 }
 
+let mostrarTotalSoportes = true;
+
 async function renderFinanzas() {
     const month = Number(document.getElementById("filtro-mes").value);
     const year = new Date().getFullYear();
 
+    // Movimientos financieros
     const { data } = await db
         .from("gastos")
         .select("*")
         .gte("fecha", toSQLDate(new Date(year, month, 1)))
         .lte("fecha", toSQLDate(new Date(year, month + 1, 0)));
+
+    // Soportes del ciclo
+    const { data: soportes } = await db
+        .from("soportes")
+        .select("cantidad, precio_servicio");
+
+    let totalSoportes = 0;
+
+    (soportes || []).forEach(s => {
+        totalSoportes += Number(s.cantidad) * Number(s.precio_servicio);
+    });
 
     const tablaQ = document.getElementById("tabla-quincena");
     const tablaF = document.getElementById("tabla-finmes");
@@ -339,11 +353,15 @@ async function renderFinanzas() {
 
     (data || []).forEach(mov => {
         const day = Number(mov.fecha.split("-")[2]);
-        if (day <= 15) quincena.push(mov);
-        else finMes.push(mov);
+        if (day <= 15) {
+            quincena.push(mov);
+        } else {
+            finMes.push(mov);
+        }
     });
 
     function renderTabla(lista, tabla, esQuincena = true) {
+
         const ingresos = lista.filter(x => x.tipo === "ingreso");
         const planillas = lista.filter(x => x.tipo === "planilla");
         const gastos = lista.filter(x => x.tipo === "gasto");
@@ -355,15 +373,20 @@ async function renderFinanzas() {
         ];
 
         ordenados.forEach(mov => {
+
             const isGasto = mov.tipo === "gasto";
             const monto = Number(mov.monto);
 
             if (esQuincena) {
-                if (isGasto) totalGastosQ += monto;
-                else totalIngresosQ += monto;
+                if (isGasto)
+                    totalGastosQ += monto;
+                else
+                    totalIngresosQ += monto;
             } else {
-                if (isGasto) totalGastosF += monto;
-                else totalIngresosF += monto;
+                if (isGasto)
+                    totalGastosF += monto;
+                else
+                    totalIngresosF += monto;
             }
 
             tabla.innerHTML += `
@@ -383,13 +406,38 @@ async function renderFinanzas() {
     renderTabla(quincena, tablaQ, true);
     renderTabla(finMes, tablaF, false);
 
+    // Mostrar total de soportes
+    if (mostrarTotalSoportes) {
+
+        totalIngresosF += totalSoportes;
+
+        tablaF.innerHTML += `
+            <tr class="table-info">
+                <td>
+                    <strong>Total Soportes</strong>
+                </td>
+                <td class="text-end text-success fw-bold">
+                    +${formatMoney(totalSoportes)}
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-danger"
+                        onclick="ocultarTotalSoportes()">
+                        ❌
+                    </button>
+                </td>
+            </tr>
+        `;
+    }
+
     const balanceQ = totalIngresosQ - totalGastosQ;
     const balanceF = totalIngresosF - totalGastosF;
 
     tablaQ.innerHTML += `
         <tr class="table-dark">
             <td><strong>Total</strong></td>
-            <td class="text-end fw-bold">${formatMoney(balanceQ)}</td>
+            <td class="text-end fw-bold">
+                ${formatMoney(balanceQ)}
+            </td>
             <td></td>
         </tr>
     `;
@@ -397,17 +445,18 @@ async function renderFinanzas() {
     tablaF.innerHTML += `
         <tr class="table-dark">
             <td><strong>Total</strong></td>
-            <td class="text-end fw-bold">${formatMoney(balanceF)}</td>
+            <td class="text-end fw-bold">
+                ${formatMoney(balanceF)}
+            </td>
             <td></td>
         </tr>
     `;
 }
 
-window.eliminarGasto = async (id) => {
-    await db.from("gastos").delete().eq("id", id);
+function ocultarTotalSoportes() {
+    mostrarTotalSoportes = false;
     renderFinanzas();
-};
-
+}
 // ============================
 // ESTADÍSTICAS
 // ============================
