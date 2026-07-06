@@ -71,6 +71,55 @@
 
         .card-header-toggle {
             cursor: pointer;
+            transition: .2s ease;
+        }
+
+        .card-header-toggle:hover {
+            filter: brightness(1.04);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .header-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            background: rgba(255, 255, 255, .16);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12);
+        }
+
+        .header-subtitle {
+            margin: 4px 0 0;
+            opacity: .85;
+            font-size: .9rem;
+            font-weight: 400;
+        }
+
+        .collapse-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            background: rgba(255, 255, 255, .16);
+            transition: .25s ease;
+        }
+
+        .card-header-toggle[aria-expanded="true"] .collapse-icon {
+            transform: rotate(180deg);
+        }
+
+        .nav-pill {
+            border-radius: 999px;
+            padding-inline: 14px;
+            font-weight: 700;
+            backdrop-filter: blur(10px);
         }
 
         .header-primary {
@@ -149,6 +198,19 @@
             border-radius: 20px;
             padding: 22px;
             box-shadow: 0 5px 20px rgba(15, 23, 42, .04);
+            border: 1px solid rgba(226, 232, 240, .75);
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            color: #1e293b;
+        }
+
+        .section-title i {
+            color: var(--primary);
         }
 
         table th {
@@ -213,15 +275,15 @@
             </a>
 
             <div class="d-flex gap-2">
-                <a href="#seccion-ciclo" class="btn btn-outline-light btn-sm">
+                <a href="#seccion-ciclo" class="btn btn-outline-light btn-sm nav-pill">
                     Ciclo
                 </a>
 
-                <a href="#seccion-mes" class="btn btn-outline-light btn-sm">
+                <a href="#seccion-mes" class="btn btn-outline-light btn-sm nav-pill">
                     Estadísticas
                 </a>
 
-                <a href="#seccion-finanzas" class="btn btn-outline-light btn-sm">
+                <a href="#seccion-finanzas" class="btn btn-outline-light btn-sm nav-pill">
                     Finanzas
                 </a>
             </div>
@@ -235,14 +297,27 @@
         <div class="card mb-4" id="seccion-ciclo">
 
             <div class="card-header header-primary card-header-toggle d-flex justify-content-between align-items-center"
-                data-bs-toggle="collapse" data-bs-target="#collapseCiclo">
+                data-bs-toggle="collapse" data-bs-target="#collapseCiclo" aria-expanded="true">
 
-                <h4 class="mb-0">
-                    <i class="bi bi-calendar-range me-2"></i>
-                    Gestión de Ciclos
-                </h4>
+                <div class="header-content">
+                    <div class="header-icon">
+                        <i class="bi bi-calendar-range fs-4"></i>
+                    </div>
 
-                <i class="bi bi-chevron-down"></i>
+                    <div>
+                        <h4 class="mb-0">
+                            Gestión de Ciclos
+                        </h4>
+
+                        <p class="header-subtitle">
+                            Registra soportes, filtra rangos y revisa el detalle del ciclo activo.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="collapse-icon">
+                    <i class="bi bi-chevron-down"></i>
+                </div>
 
             </div>
 
@@ -397,14 +472,34 @@
 
         <div class="card mb-4" id="seccion-mes">
 
-            <div class="card-header header-info text-white">
-                <h4 class="mb-0">
-                    <i class="bi bi-bar-chart-fill me-2"></i>
-                    Estadísticas
-                </h4>
+            <div class="card-header header-info text-white card-header-toggle d-flex justify-content-between align-items-center"
+                data-bs-toggle="collapse" data-bs-target="#collapseEstadisticas" aria-expanded="true">
+
+                <div class="header-content">
+                    <div class="header-icon">
+                        <i class="bi bi-bar-chart-fill fs-4"></i>
+                    </div>
+
+                    <div>
+                        <h4 class="mb-0">
+                            Estadísticas
+                        </h4>
+
+                        <p class="header-subtitle">
+                            Visualiza el avance del ciclo, la meta mensual y el rendimiento por día.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="collapse-icon">
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+
             </div>
 
-            <div class="card-body">
+            <div id="collapseEstadisticas" class="collapse show">
+
+                <div class="card-body">
 
                 <div class="text-center mb-4">
                     <h2 id="nombre-mes" class="fw-bold"></h2>
@@ -456,6 +551,8 @@
 
                 </div>
 
+                </div>
+
             </div>
 
         </div>
@@ -464,16 +561,34 @@
 
         <div class="card" id="seccion-finanzas">
 
-            <div class="card-header header-dark text-white">
+            <div class="card-header header-dark text-white card-header-toggle d-flex justify-content-between align-items-center"
+                data-bs-toggle="collapse" data-bs-target="#collapseFinanzas" aria-expanded="true">
 
-                <h4 class="mb-0">
-                    <i class="bi bi-cash-coin me-2"></i>
-                    Finanzas
-                </h4>
+                <div class="header-content">
+                    <div class="header-icon">
+                        <i class="bi bi-cash-coin fs-4"></i>
+                    </div>
+
+                    <div>
+                        <h4 class="mb-0">
+                            Finanzas
+                        </h4>
+
+                        <p class="header-subtitle">
+                            Organiza ingresos, planilla, gastos y el total de soportes del ciclo.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="collapse-icon">
+                    <i class="bi bi-chevron-down"></i>
+                </div>
 
             </div>
 
-            <div class="card-body">
+            <div id="collapseFinanzas" class="collapse show">
+
+                <div class="card-body">
 
                 <select id="filtro-mes"
                     class="form-select mb-4">
@@ -557,6 +672,8 @@
                         </div>
 
                     </div>
+
+                </div>
 
                 </div>
 
