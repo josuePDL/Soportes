@@ -288,7 +288,6 @@ function initFinanzas() {
 
     filtro.addEventListener("change", renderFinanzas);
 
-    crearCheckSoportes();
     renderFinanzas();
 }
 
@@ -316,21 +315,6 @@ async function guardarMovimiento(e) {
 
 let mostrarTotalSoportes = true;
 
-function crearCheckSoportes(){
-    if(document.getElementById("check-soportes")) return;
-    const tabla=document.getElementById("tabla-finmes");
-    const cont=tabla.closest(".section-box");
-    const div=document.createElement("div");
-    div.className="form-check mb-2";
-    div.innerHTML=`<input class="form-check-input" type="checkbox" id="check-soportes" checked>
-<label class="form-check-label" for="check-soportes">Mostrar total de soportes</label>`;
-    cont.insertBefore(div, cont.querySelector("table"));
-    document.getElementById("check-soportes").addEventListener("change",e=>{
-        mostrarTotalSoportes=e.target.checked;
-        renderFinanzas();
-    });
-}
-
 async function renderFinanzas() {
     const month = Number(document.getElementById("filtro-mes").value);
     const year = new Date().getFullYear();
@@ -343,15 +327,23 @@ async function renderFinanzas() {
         .lte("fecha", toSQLDate(new Date(year, month + 1, 0)));
 
     // Soportes del ciclo
+    const desde = document.getElementById("ciclo-desde").value;
+    const hasta = document.getElementById("ciclo-hasta").value;
+
     const { data: soportes } = await db
         .from("soportes")
-        .select("precio_servicio")
+        .select("cantidad")
+        .gte("fecha", desde)
+        .lte("fecha", hasta);
 
-    let totalSoportes = 0;
+    let cantidadSoportes = 0;
 
     (soportes || []).forEach(s => {
-        totalSoportes += Number(s.precio_servicio || 0);
+        cantidadSoportes += Number(s.cantidad || 0);
     });
+
+    const VALOR_SOPORTE = 14.50;
+    const totalSoportes = cantidadSoportes * VALOR_SOPORTE;
 
     const tablaQ = document.getElementById("tabla-quincena");
     const tablaF = document.getElementById("tabla-finmes");
@@ -430,7 +422,7 @@ async function renderFinanzas() {
         tablaF.innerHTML += `
             <tr class="table-info">
                 <td>
-                    <strong>Total Soportes</strong>
+                    <strong>Total Soportes (${cantidadSoportes} × Q14.50)</strong>
                 </td>
                 <td class="text-end text-success fw-bold">
                     +${formatMoney(totalSoportes)}
