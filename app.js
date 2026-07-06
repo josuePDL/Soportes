@@ -7,47 +7,54 @@ const db = supabase.createClient(
 );
 
 // ============================
-// VARIABLES GLOBALES
+// FIX CICLO + ESTADISTICAS + FINANZAS
 // ============================
-const VALOR_SOPORTE = 14.50;
-let mostrarTotalSoportes = true;
 
-// ============================
-// UTILIDADES
-// ============================
-function toSQLDate(date) {
-    return date.toISOString().split("T")[0];
-}
+function moneyGT(amount) {
+    if (typeof formatMoney === "function") return formatMoney(amount);
 
-function formatMoney(amount) {
     return `Q${Number(amount || 0).toLocaleString("es-GT", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     })}`;
 }
 
-function monthName(index) {
-    const meses = [
-        "Enero", "Febrero", "Marzo", "Abril",
-        "Mayo", "Junio", "Julio", "Agosto",
-        "Septiembre", "Octubre", "Noviembre", "Diciembre"
-    ];
+function sqlDate(date) {
+    if (typeof toSQLDate === "function") return toSQLDate(date);
+    return date.toISOString().split("T")[0];
+}
 
-    return meses[index];
+function getMostrarTotalSoportes() {
+    const valor = localStorage.getItem("mostrarTotalSoportes");
+    return valor === null ? true : valor === "true";
+}
+
+function setMostrarTotalSoportes(valor) {
+    localStorage.setItem("mostrarTotalSoportes", valor ? "true" : "false");
 }
 
 // ============================
-// INICIO
+// INICIO GENERAL
 // ============================
-document.addEventListener("DOMContentLoaded", () => {
+function iniciarSistema() {
+    if (document.getElementById("ciclo-desde") && document.getElementById("ciclo-hasta")) {
+        initCiclo();
+    }
+
     if (document.getElementById("seccion-finanzas")) {
         initFinanzas();
     }
 
-    if (document.getElementById("ciclo-desde") && document.getElementById("ciclo-hasta")) {
-        initCiclo();
-    }
-});
+    if (typeof renderCiclo === "function") renderCiclo();
+    if (typeof renderEstadisticas === "function") renderEstadisticas();
+    if (typeof renderFinanzas === "function") renderFinanzas();
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", iniciarSistema);
+} else {
+    iniciarSistema();
+}
 
 // ============================
 // CICLO
@@ -58,32 +65,34 @@ function initCiclo() {
 
     if (!desdeInput || !hastaInput) return;
 
-    const hoy = new Date();
-    const year = hoy.getFullYear();
-    const month = hoy.getMonth();
+    if (!desdeInput.value || !hastaInput.value) {
+        const hoy = new Date();
+        const year = hoy.getFullYear();
+        const month = hoy.getMonth();
 
-    let desde;
-    let hasta;
+        let desde;
+        let hasta;
 
-    if (hoy.getDate() >= 16) {
-        desde = new Date(year, month, 16);
-        hasta = new Date(year, month + 1, 15);
-    } else {
-        desde = new Date(year, month - 1, 16);
-        hasta = new Date(year, month, 15);
+        if (hoy.getDate() >= 16) {
+            desde = new Date(year, month, 16);
+            hasta = new Date(year, month + 1, 15);
+        } else {
+            desde = new Date(year, month - 1, 16);
+            hasta = new Date(year, month, 15);
+        }
+
+        desdeInput.value = sqlDate(desde);
+        hastaInput.value = sqlDate(hasta);
     }
-
-    desdeInput.value = toSQLDate(desde);
-    hastaInput.value = toSQLDate(hasta);
 
     const btnFiltrar = document.getElementById("btn-filtrar-ciclo");
 
     if (btnFiltrar) {
-        btnFiltrar.addEventListener("click", () => {
-            if (typeof renderCiclo === "function") renderCiclo();
-            if (typeof renderEstadisticas === "function") renderEstadisticas();
-            if (typeof renderFinanzas === "function") renderFinanzas();
-        });
+        btnFiltrar.onclick = () => {
+            renderCiclo();
+            renderEstadisticas();
+            renderFinanzas();
+        };
     }
 }
 
@@ -97,12 +106,12 @@ window.cicloAnterior = () => {
     desde.setMonth(desde.getMonth() - 1);
     hasta.setMonth(hasta.getMonth() - 1);
 
-    desdeInput.value = toSQLDate(desde);
-    hastaInput.value = toSQLDate(hasta);
+    desdeInput.value = sqlDate(desde);
+    hastaInput.value = sqlDate(hasta);
 
-    if (typeof renderCiclo === "function") renderCiclo();
-    if (typeof renderEstadisticas === "function") renderEstadisticas();
-    if (typeof renderFinanzas === "function") renderFinanzas();
+    renderCiclo();
+    renderEstadisticas();
+    renderFinanzas();
 };
 
 window.cicloSiguiente = () => {
@@ -115,13 +124,76 @@ window.cicloSiguiente = () => {
     desde.setMonth(desde.getMonth() + 1);
     hasta.setMonth(hasta.getMonth() + 1);
 
-    desdeInput.value = toSQLDate(desde);
-    hastaInput.value = toSQLDate(hasta);
+    desdeInput.value = sqlDate(desde);
+    hastaInput.value = sqlDate(hasta);
 
-    if (typeof renderCiclo === "function") renderCiclo();
-    if (typeof renderEstadisticas === "function") renderEstadisticas();
-    if (typeof renderFinanzas === "function") renderFinanzas();
+    renderCiclo();
+    renderEstadisticas();
+    renderFinanzas();
 };
+
+// ============================
+// ESTADISTICAS
+// ============================
+async function renderEstadisticas() {
+    const desde = document.getElementById("ciclo-desde")?.value;
+    const hasta = document.getElementById("ciclo-hasta")?.value;
+
+    if (!desde || !hasta) return;
+
+    const { data: soportes } = await db
+        .from("soportes")
+        .select("cantidad, a_cobrar")
+        .gte("fecha", desde)
+        .lte("fecha", hasta);
+
+    let totalRealizados = 0;
+    let totalACobrar = 0;
+
+    (soportes || []).forEach(s => {
+        const cantidad = Number(s.cantidad || 0);
+
+        totalRealizados += cantidad;
+
+        if (s.a_cobrar) {
+            totalACobrar += cantidad;
+        }
+    });
+
+    const totalDinero = totalRealizados * 14.50;
+
+    const idsTotal = [
+        "total-soportes",
+        "soportes-realizados",
+        "estadistica-total-soportes"
+    ];
+
+    const idsDinero = [
+        "total-dinero-soportes",
+        "monto-total-soportes",
+        "total-ciclo"
+    ];
+
+    const idsCobrar = [
+        "total-a-cobrar",
+        "soportes-a-cobrar"
+    ];
+
+    idsTotal.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = totalRealizados;
+    });
+
+    idsDinero.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = moneyGT(totalDinero);
+    });
+
+    idsCobrar.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = totalACobrar;
+    });
+}
 
 // ============================
 // FINANZAS
@@ -129,33 +201,47 @@ window.cicloSiguiente = () => {
 function initFinanzas() {
     const filtro = document.getElementById("filtro-mes");
 
-    filtro.innerHTML = Array.from(
-        { length: 12 },
-        (_, i) => `<option value="${i}">${monthName(i)}</option>`
-    ).join("");
+    if (filtro && filtro.options.length === 0) {
+        const meses = [
+            "Enero", "Febrero", "Marzo", "Abril",
+            "Mayo", "Junio", "Julio", "Agosto",
+            "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        ];
 
-    filtro.value = new Date().getMonth();
+        filtro.innerHTML = meses
+            .map((mes, i) => `<option value="${i}">${mes}</option>`)
+            .join("");
 
-    document.getElementById("form-finanza")
-        .addEventListener("submit", guardarMovimiento);
+        filtro.value = new Date().getMonth();
+    }
 
-    filtro.addEventListener("change", renderFinanzas);
+    const form = document.getElementById("form-finanza");
+
+    if (form) {
+        form.onsubmit = guardarMovimiento;
+    }
+
+    if (filtro) {
+        filtro.onchange = renderFinanzas;
+    }
 
     crearCheckboxSoportes();
-    renderFinanzas();
 }
 
 function crearCheckboxSoportes() {
     if (document.getElementById("check-total-soportes")) return;
 
     const tablaFinMes = document.getElementById("tabla-finmes");
+    if (!tablaFinMes) return;
+
     const contenedor = tablaFinMes.closest(".section-box");
+    if (!contenedor) return;
 
     const div = document.createElement("div");
     div.className = "form-check form-switch mb-3";
 
     div.innerHTML = `
-        <input class="form-check-input" type="checkbox" id="check-total-soportes" checked>
+        <input class="form-check-input" type="checkbox" id="check-total-soportes">
         <label class="form-check-label fw-bold" for="check-total-soportes">
             Mostrar y sumar Total Soportes
         </label>
@@ -163,8 +249,12 @@ function crearCheckboxSoportes() {
 
     contenedor.insertBefore(div, contenedor.querySelector("table"));
 
-    document.getElementById("check-total-soportes").addEventListener("change", e => {
-        mostrarTotalSoportes = e.target.checked;
+    const check = document.getElementById("check-total-soportes");
+
+    check.checked = getMostrarTotalSoportes();
+
+    check.addEventListener("change", e => {
+        setMostrarTotalSoportes(e.target.checked);
         renderFinanzas();
     });
 }
@@ -178,9 +268,7 @@ async function guardarMovimiento(e) {
     const year = new Date().getFullYear();
 
     const payload = {
-        fecha: toSQLDate(
-            new Date(year, mes, periodo === "quincena" ? 15 : 30)
-        ),
+        fecha: sqlDate(new Date(year, mes, periodo === "quincena" ? 15 : 30)),
         descripcion: document.getElementById("descripcion").value,
         monto: Number(document.getElementById("monto").value),
         tipo
@@ -193,14 +281,20 @@ async function guardarMovimiento(e) {
 }
 
 async function renderFinanzas() {
-    const month = Number(document.getElementById("filtro-mes").value);
+    const filtro = document.getElementById("filtro-mes");
+    const tablaQ = document.getElementById("tabla-quincena");
+    const tablaF = document.getElementById("tabla-finmes");
+
+    if (!filtro || !tablaQ || !tablaF) return;
+
+    const month = Number(filtro.value);
     const year = new Date().getFullYear();
 
     const { data } = await db
         .from("gastos")
         .select("*")
-        .gte("fecha", toSQLDate(new Date(year, month, 1)))
-        .lte("fecha", toSQLDate(new Date(year, month + 1, 0)));
+        .gte("fecha", sqlDate(new Date(year, month, 1)))
+        .lte("fecha", sqlDate(new Date(year, month + 1, 0)));
 
     const desde = document.getElementById("ciclo-desde")?.value;
     const hasta = document.getElementById("ciclo-hasta")?.value;
@@ -219,10 +313,7 @@ async function renderFinanzas() {
         });
     }
 
-    const totalSoportes = cantidadSoportes * VALOR_SOPORTE;
-
-    const tablaQ = document.getElementById("tabla-quincena");
-    const tablaF = document.getElementById("tabla-finmes");
+    const totalSoportes = cantidadSoportes * 14.50;
 
     tablaQ.innerHTML = "";
     tablaF.innerHTML = "";
@@ -245,7 +336,7 @@ async function renderFinanzas() {
         }
     });
 
-    function renderTabla(lista, tabla, esQuincena = true) {
+    function renderTabla(lista, tabla, esQuincena) {
         const ingresos = lista.filter(x => x.tipo === "ingreso");
         const pagoSoportes = lista.filter(x => x.tipo === "pago_soportes");
         const planillas = lista.filter(x => x.tipo === "planilla");
@@ -263,28 +354,22 @@ async function renderFinanzas() {
             const monto = Number(mov.monto || 0);
 
             if (esQuincena) {
-                if (isGasto) {
-                    totalGastosQ += monto;
-                } else {
-                    totalIngresosQ += monto;
-                }
+                if (isGasto) totalGastosQ += monto;
+                else totalIngresosQ += monto;
             } else {
-                if (isGasto) {
-                    totalGastosF += monto;
-                } else {
-                    totalIngresosF += monto;
-                }
+                if (isGasto) totalGastosF += monto;
+                else totalIngresosF += monto;
             }
 
             tabla.innerHTML += `
                 <tr>
                     <td>${mov.descripcion}</td>
                     <td class="text-end ${isGasto ? 'text-danger' : 'text-success'} fw-bold">
-                        ${isGasto ? '-' : '+'}${formatMoney(monto)}
+                        ${isGasto ? "-" : "+"}${moneyGT(monto)}
                     </td>
                     <td class="text-end">
                         <button class="btn btn-sm btn-outline-danger" onclick="eliminarGasto(${mov.id})">
-                            ❌
+                            X
                         </button>
                     </td>
                 </tr>
@@ -295,16 +380,16 @@ async function renderFinanzas() {
     renderTabla(quincena, tablaQ, true);
     renderTabla(finMes, tablaF, false);
 
-    if (mostrarTotalSoportes) {
+    if (getMostrarTotalSoportes()) {
         totalIngresosF += totalSoportes;
 
         tablaF.innerHTML += `
             <tr class="table-info">
                 <td>
-                    <strong>Total Soportes (${cantidadSoportes} × Q14.50)</strong>
+                    <strong>Total Soportes (${cantidadSoportes} x Q14.50)</strong>
                 </td>
                 <td class="text-end text-success fw-bold">
-                    +${formatMoney(totalSoportes)}
+                    +${moneyGT(totalSoportes)}
                 </td>
                 <td></td>
             </tr>
@@ -317,9 +402,7 @@ async function renderFinanzas() {
     tablaQ.innerHTML += `
         <tr class="table-dark">
             <td><strong>Total</strong></td>
-            <td class="text-end fw-bold">
-                ${formatMoney(balanceQ)}
-            </td>
+            <td class="text-end fw-bold">${moneyGT(balanceQ)}</td>
             <td></td>
         </tr>
     `;
@@ -327,9 +410,7 @@ async function renderFinanzas() {
     tablaF.innerHTML += `
         <tr class="table-dark">
             <td><strong>Total</strong></td>
-            <td class="text-end fw-bold">
-                ${formatMoney(balanceF)}
-            </td>
+            <td class="text-end fw-bold">${moneyGT(balanceF)}</td>
             <td></td>
         </tr>
     `;
