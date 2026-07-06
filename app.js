@@ -288,6 +288,9 @@ function initFinanzas() {
 
     filtro.addEventListener("change", renderFinanzas);
 
+    crearCheckboxTotalSoportes();
+    sincronizarFinanzasConCiclo();
+
     renderFinanzas();
 }
 
@@ -313,7 +316,56 @@ async function guardarMovimiento(e) {
     renderFinanzas();
 }
 
-let mostrarTotalSoportes = true;
+const STORAGE_TOTAL_SOPORTES = "mostrarTotalSoportesFinanzas";
+let mostrarTotalSoportes = localStorage.getItem(STORAGE_TOTAL_SOPORTES) === null
+    ? true
+    : localStorage.getItem(STORAGE_TOTAL_SOPORTES) === "true";
+
+function crearCheckboxTotalSoportes() {
+    if (document.getElementById("check-total-soportes")) return;
+
+    const tablaFinMes = document.getElementById("tabla-finmes");
+    if (!tablaFinMes) return;
+
+    const contenedor = tablaFinMes.closest(".section-box");
+    if (!contenedor) return;
+
+    const div = document.createElement("div");
+    div.className = "form-check form-switch mb-3";
+    div.innerHTML = `
+        <input class="form-check-input" type="checkbox" id="check-total-soportes" checked>
+        <label class="form-check-label fw-bold" for="check-total-soportes">
+            Mostrar y sumar Total Soportes
+        </label>
+    `;
+
+    contenedor.insertBefore(div, contenedor.querySelector("table"));
+
+    const check = document.getElementById("check-total-soportes");
+    check.checked = mostrarTotalSoportes;
+
+    check.addEventListener("change", function () {
+        mostrarTotalSoportes = this.checked;
+        localStorage.setItem(STORAGE_TOTAL_SOPORTES, String(mostrarTotalSoportes));
+        renderFinanzas();
+    });
+}
+
+function sincronizarFinanzasConCiclo() {
+    const desde = document.getElementById("ciclo-desde");
+    const hasta = document.getElementById("ciclo-hasta");
+    const btnFiltrar = document.getElementById("btn-filtrar-ciclo");
+    const btnAnterior = document.getElementById("btn-ciclo-anterior");
+    const btnSiguiente = document.getElementById("btn-ciclo-siguiente");
+    const formSoporte = document.getElementById("form-soporte");
+
+    if (desde) desde.addEventListener("change", renderFinanzas);
+    if (hasta) hasta.addEventListener("change", renderFinanzas);
+    if (btnFiltrar) btnFiltrar.addEventListener("click", () => setTimeout(renderFinanzas, 0));
+    if (btnAnterior) btnAnterior.addEventListener("click", () => setTimeout(renderFinanzas, 0));
+    if (btnSiguiente) btnSiguiente.addEventListener("click", () => setTimeout(renderFinanzas, 0));
+    if (formSoporte) formSoporte.addEventListener("submit", () => setTimeout(renderFinanzas, 500));
+}
 
 async function renderFinanzas() {
     const month = Number(document.getElementById("filtro-mes").value);
@@ -416,7 +468,6 @@ async function renderFinanzas() {
 
     // Mostrar total de soportes
     if (mostrarTotalSoportes) {
-
         totalIngresosF += totalSoportes;
 
         tablaF.innerHTML += `
@@ -427,12 +478,7 @@ async function renderFinanzas() {
                 <td class="text-end text-success fw-bold">
                     +${formatMoney(totalSoportes)}
                 </td>
-                <td>
-                    <button class="btn btn-sm btn-outline-danger"
-                        onclick="ocultarTotalSoportes()">
-                        ❌
-                    </button>
-                </td>
+                <td></td>
             </tr>
         `;
     }
@@ -461,10 +507,12 @@ async function renderFinanzas() {
     `;
 }
 
-function ocultarTotalSoportes() {
-    mostrarTotalSoportes = false;
+async function eliminarGasto(id) {
+    await db.from("gastos").delete().eq("id", id);
     renderFinanzas();
 }
+
+window.eliminarGasto = eliminarGasto;
 // ============================
 // ESTADÍSTICAS
 // ============================
