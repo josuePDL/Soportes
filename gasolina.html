@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Costos de Envío - Moto</title>
+    <style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f7f6;
+        color: #333;
+        margin: 0;
+        padding: 20px;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+    }
+
+    .container {
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        max-width: 520px;
+        width: 100%;
+    }
+
+    h2 {
+        text-align: center;
+        color: #2c3e50;
+        margin-bottom: 10px;
+        font-size: 26px;
+    }
+
+    .subtitulo {
+        text-align: center;
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 25px;
+    }
+
+    .input-group {
+        margin-bottom: 18px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+        font-size: 15px;
+    }
+
+    input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 16px;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 18px;
+    }
+
+    .checkbox-group input {
+        width: auto;
+        min-width: 18px;
+        height: 18px;
+    }
+
+    .checkbox-group label {
+        margin: 0;
+        font-size: 15px;
+    }
+
+    .info {
+        background-color: #eafaf1;
+        border-left: 4px solid #27ae60;
+        padding: 12px;
+        border-radius: 6px;
+        font-size: 14px;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+
+    button {
+        width: 100%;
+        padding: 14px;
+        background-color: #27ae60;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+        font-weight: bold;
+        margin-top: 10px;
+    }
+
+    button:hover {
+        background-color: #219150;
+    }
+
+    .resultados {
+        margin-top: 30px;
+    }
+
+    .card {
+        background-color: #ecf0f1;
+        padding: 20px;
+        border-radius: 8px;
+        width: 100%;
+    }
+
+    .card h3 {
+        margin-top: 0;
+        text-align: center;
+        border-bottom: 2px solid #bdc3c7;
+        padding-bottom: 10px;
+        color: #2c3e50;
+        font-size: 22px;
+    }
+
+    .total {
+        font-size: 30px;
+        font-weight: bold;
+        color: #27ae60;
+        text-align: center;
+        margin: 15px 0;
+        word-break: break-word;
+    }
+
+    .desglose {
+        font-size: 15px;
+        line-height: 1.8;
+        background-color: #fff;
+        padding: 15px;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+    }
+
+    .linea {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        border-bottom: 1px dashed #ddd;
+        padding: 6px 0;
+    }
+
+    .linea span {
+        flex: 1;
+    }
+
+    .linea strong {
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .linea:last-child {
+        border-bottom: none;
+    }
+
+    .nota-final {
+        font-size: 13px;
+        color: #666;
+        margin-top: 12px;
+        text-align: center;
+        line-height: 1.4;
+    }
+
+    @media (max-width: 600px) {
+        body {
+            padding: 12px;
+            align-items: stretch;
+        }
+
+        .container {
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 100%;
+        }
+
+        h2 {
+            font-size: 22px;
+        }
+
+        .subtitulo {
+            font-size: 13px;
+        }
+
+        input,
+        button {
+            font-size: 16px;
+        }
+
+        .card {
+            padding: 15px;
+        }
+
+        .card h3 {
+            font-size: 20px;
+        }
+
+        .total {
+            font-size: 26px;
+        }
+
+        .desglose {
+            font-size: 14px;
+            padding: 12px;
+        }
+
+        .linea {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 2px;
+        }
+
+        .linea strong {
+            text-align: left;
+            white-space: normal;
+            color: #2c3e50;
+        }
+    }
+
+    @media (max-width: 360px) {
+        .container {
+            padding: 16px;
+        }
+
+        h2 {
+            font-size: 20px;
+        }
+
+        .total {
+            font-size: 24px;
+        }
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Cotizador de Envíos en Moto</h2>
+    <div class="subtitulo">Haojue DM 150 | Guatemala | Sin cálculo por peso</div>
+
+    <div class="info">
+        Rendimiento usado: <strong>140 km por galón</strong><br>
+        Equivalente aproximado: <strong>37 km por litro</strong>
+    </div>
+    
+    <div class="input-group">
+        <label for="distancia">Distancia en kilómetros:</label>
+        <input type="number" id="distancia" placeholder="Ej: 15" min="0.1" step="0.1">
+    </div>
+
+    <div class="checkbox-group">
+        <input type="checkbox" id="ida-vuelta">
+        <label for="ida-vuelta" style="margin: 0;">Calcular ida y vuelta</label>
+    </div>
+    
+    <div class="input-group">
+        <label for="tiempo">Tiempo en tráfico/minutos:</label>
+        <input type="number" id="tiempo" placeholder="Ej: 30" min="1">
+    </div>
+
+    <div class="input-group">
+        <label for="precio-gasolina">Precio de la gasolina por galón:</label>
+        <input type="number" id="precio-gasolina" placeholder="Ej: 35.00" min="1" step="0.1" value="35.00">
+    </div>
+    
+    <button onclick="calcularCostos()">Calcular Costo Final</button>
+
+    <div class="resultados" id="resultados-box" style="display: none;">
+        <div class="card">
+            <h3>Costo Estimado</h3>
+            <div class="total" id="total-moto">Q0.00</div>
+
+            <div class="desglose">
+                <strong>Desglose del cálculo:</strong><br><br>
+
+                <div class="linea">
+                    <span>Distancia calculada:</span>
+                    <strong id="distancia-final">0 km</strong>
+                </div>
+
+                <div class="linea">
+                    <span>Costo por km:</span>
+                    <strong id="costo-km">Q0.00</strong>
+                </div>
+
+                <div class="linea">
+                    <span>Gasolina:</span>
+                    <strong id="gas-moto">Q0.00</strong>
+                </div>
+
+                <div class="linea">
+                    <span>Tiempo / mano de obra:</span>
+                    <strong id="tiempo-moto">Q0.00</strong>
+                </div>
+
+                <div class="linea">
+                    <span>Desgaste / mantenimiento:</span>
+                    <strong id="desgaste-moto">Q0.00</strong>
+                </div>
+            </div>
+
+            <div class="nota-final">
+                Este cálculo no toma en cuenta peso, solo distancia, gasolina, tiempo y desgaste.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function calcularCostos() {
+        const distancia = parseFloat(document.getElementById('distancia').value);
+        const tiempo = parseFloat(document.getElementById('tiempo').value);
+        const precioGasolina = parseFloat(document.getElementById('precio-gasolina').value);
+        const idaVuelta = document.getElementById('ida-vuelta').checked;
+
+        if (
+            isNaN(distancia) || 
+            isNaN(tiempo) || 
+            isNaN(precioGasolina) || 
+            distancia <= 0 || 
+            tiempo <= 0 || 
+            precioGasolina <= 0
+        ) {
+            alert("Por favor ingresa valores válidos en todos los campos.");
+            return;
+        }
+
+        const kmPorGalon = 140; 
+        const costoPorMinuto = 0.40;
+        const desgastePorKm = 0.30;
+
+        const distanciaFinal = idaVuelta ? distancia * 2 : distancia;
+
+        const costoPorKm = precioGasolina / kmPorGalon;
+        const motoGasolina = distanciaFinal * costoPorKm;
+        const motoTiempo = tiempo * costoPorMinuto;
+        const motoDesgaste = distanciaFinal * desgastePorKm;
+
+        const motoTotal = motoGasolina + motoTiempo + motoDesgaste;
+
+        document.getElementById('resultados-box').style.display = 'block';
+
+        document.getElementById('total-moto').innerText = "Q" + motoTotal.toFixed(2);
+        document.getElementById('distancia-final').innerText = distanciaFinal.toFixed(2) + " km";
+        document.getElementById('costo-km').innerText = "Q" + costoPorKm.toFixed(2);
+        document.getElementById('gas-moto').innerText = "Q" + motoGasolina.toFixed(2);
+        document.getElementById('tiempo-moto').innerText = "Q" + motoTiempo.toFixed(2);
+        document.getElementById('desgaste-moto').innerText = "Q" + motoDesgaste.toFixed(2);
+    }
+</script>
+
+</body>
+</html>
