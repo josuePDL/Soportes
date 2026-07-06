@@ -288,6 +288,7 @@ function initFinanzas() {
 
     filtro.addEventListener("change", renderFinanzas);
 
+    crearCheckSoportes();
     renderFinanzas();
 }
 
@@ -315,6 +316,21 @@ async function guardarMovimiento(e) {
 
 let mostrarTotalSoportes = true;
 
+function crearCheckSoportes(){
+    if(document.getElementById("check-soportes")) return;
+    const tabla=document.getElementById("tabla-finmes");
+    const cont=tabla.closest(".section-box");
+    const div=document.createElement("div");
+    div.className="form-check mb-2";
+    div.innerHTML=`<input class="form-check-input" type="checkbox" id="check-soportes" checked>
+<label class="form-check-label" for="check-soportes">Mostrar total de soportes</label>`;
+    cont.insertBefore(div, cont.querySelector("table"));
+    document.getElementById("check-soportes").addEventListener("change",e=>{
+        mostrarTotalSoportes=e.target.checked;
+        renderFinanzas();
+    });
+}
+
 async function renderFinanzas() {
     const month = Number(document.getElementById("filtro-mes").value);
     const year = new Date().getFullYear();
@@ -329,12 +345,12 @@ async function renderFinanzas() {
     // Soportes del ciclo
     const { data: soportes } = await db
         .from("soportes")
-        .select("cantidad, precio_servicio");
+        .select("precio_servicio")
 
     let totalSoportes = 0;
 
     (soportes || []).forEach(s => {
-        totalSoportes += Number(s.cantidad) * Number(s.precio_servicio);
+        totalSoportes += Number(s.precio_servicio || 0);
     });
 
     const tablaQ = document.getElementById("tabla-quincena");
