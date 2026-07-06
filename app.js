@@ -422,7 +422,7 @@ async function renderFinanzas() {
         tablaF.innerHTML += `
             <tr class="table-info">
                 <td>
-                    <strong>Total Soportes (${cantidadSoportes} × Q14.50)</strong>
+                    <strong>Total Soportes (${cantidadSoportes} )</strong>
                 </td>
                 <td class="text-end text-success fw-bold">
                     +${formatMoney(totalSoportes)}
