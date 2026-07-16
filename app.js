@@ -56,6 +56,15 @@ function obtenerCicloActual() {
     return { desde, hasta };
 }
 
+// Devuelve el ciclo fijo que se paga en el mes indicado.
+// Ejemplo: julio => 16 de junio al 15 de julio.
+function obtenerCicloPorMesPago(year, month) {
+    return {
+        desde: new Date(year, month - 1, 16),
+        hasta: new Date(year, month, 15)
+    };
+}
+
 // ============================
 // CICLO
 // ============================
@@ -228,6 +237,7 @@ window.ajustarCantidad = async (fecha, cambio) => {
 
     renderCiclo();
     renderEstadisticas();
+    renderFinanzas();
 };
 
 window.eliminarSoporteGrupo = async (idsString) => {
@@ -235,6 +245,7 @@ window.eliminarSoporteGrupo = async (idsString) => {
     await db.from("soportes").delete().in("id", idsString.split(","));
     renderCiclo();
     renderEstadisticas();
+    renderFinanzas();
 };
 
 async function procesarEnvioFacturado() {
@@ -289,8 +300,6 @@ function initFinanzas() {
     filtro.addEventListener("change", renderFinanzas);
 
     crearCheckboxTotalSoportes();
-    sincronizarFinanzasConCiclo();
-
     renderFinanzas();
 }
 
@@ -351,22 +360,6 @@ function crearCheckboxTotalSoportes() {
     });
 }
 
-function sincronizarFinanzasConCiclo() {
-    const desde = document.getElementById("ciclo-desde");
-    const hasta = document.getElementById("ciclo-hasta");
-    const btnFiltrar = document.getElementById("btn-filtrar-ciclo");
-    const btnAnterior = document.getElementById("btn-ciclo-anterior");
-    const btnSiguiente = document.getElementById("btn-ciclo-siguiente");
-    const formSoporte = document.getElementById("form-soporte");
-
-    if (desde) desde.addEventListener("change", renderFinanzas);
-    if (hasta) hasta.addEventListener("change", renderFinanzas);
-    if (btnFiltrar) btnFiltrar.addEventListener("click", () => setTimeout(renderFinanzas, 0));
-    if (btnAnterior) btnAnterior.addEventListener("click", () => setTimeout(renderFinanzas, 0));
-    if (btnSiguiente) btnSiguiente.addEventListener("click", () => setTimeout(renderFinanzas, 0));
-    if (formSoporte) formSoporte.addEventListener("submit", () => setTimeout(renderFinanzas, 500));
-}
-
 async function renderFinanzas() {
     const month = Number(document.getElementById("filtro-mes").value);
     const year = new Date().getFullYear();
@@ -378,9 +371,11 @@ async function renderFinanzas() {
         .gte("fecha", toSQLDate(new Date(year, month, 1)))
         .lte("fecha", toSQLDate(new Date(year, month + 1, 0)));
 
-    // Soportes del ciclo
-    const desde = document.getElementById("ciclo-desde").value;
-    const hasta = document.getElementById("ciclo-hasta").value;
+    // El mes de Finanzas determina un ciclo de pago fijo e independiente
+    // del ciclo que se esté consultando en la sección Ciclo.
+    const cicloFinanzas = obtenerCicloPorMesPago(year, month);
+    const desde = toSQLDate(cicloFinanzas.desde);
+    const hasta = toSQLDate(cicloFinanzas.hasta);
 
     const { data: soportes } = await db
         .from("soportes")
@@ -474,6 +469,9 @@ async function renderFinanzas() {
             <tr class="table-info">
                 <td>
                     <strong>Total Soportes (${cantidadSoportes} × Q14.50)</strong>
+                    <small class="d-block text-muted">
+                        Ciclo: ${formatDate(desde)} al ${formatDate(hasta)}
+                    </small>
                 </td>
                 <td class="text-end text-success fw-bold">
                     +${formatMoney(totalSoportes)}
