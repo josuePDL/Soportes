@@ -286,6 +286,8 @@ async function procesarEnvioFacturado() {
 // ============================
 function initFinanzas() {
     const filtro = document.getElementById("filtro-mes");
+    const filtroYear = document.getElementById("filtro-year");
+    const yearActual = new Date().getFullYear();
 
     filtro.innerHTML = Array.from(
         { length: 12 },
@@ -294,10 +296,21 @@ function initFinanzas() {
 
     filtro.value = new Date().getMonth();
 
+    filtroYear.innerHTML = Array.from(
+        { length: yearActual - 2025 + 6 },
+        (_, i) => {
+            const year = 2025 + i;
+            return `<option value="${year}">${year}</option>`;
+        }
+    ).join("");
+
+    filtroYear.value = yearActual;
+
     document.getElementById("form-finanza")
         .addEventListener("submit", guardarMovimiento);
 
     filtro.addEventListener("change", renderFinanzas);
+    filtroYear.addEventListener("change", renderFinanzas);
 
     crearCheckboxTotalSoportes();
     renderFinanzas();
@@ -309,7 +322,7 @@ async function guardarMovimiento(e) {
     const tipo = document.getElementById("tipo").value;
     const periodo = document.getElementById("periodo-movimiento").value;
     const mes = Number(document.getElementById("filtro-mes").value);
-    const year = new Date().getFullYear();
+    const year = Number(document.getElementById("filtro-year").value);
 
     const payload = {
         fecha: toSQLDate(
@@ -362,7 +375,7 @@ function crearCheckboxTotalSoportes() {
 
 async function renderFinanzas() {
     const month = Number(document.getElementById("filtro-mes").value);
-    const year = new Date().getFullYear();
+    const year = Number(document.getElementById("filtro-year").value);
 
     // Movimientos financieros
     const { data } = await db
