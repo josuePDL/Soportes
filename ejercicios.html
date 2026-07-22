@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rutina Gym - Josue</title>
+
+  <style>
+    :root {
+      --primary: #19c7ad;
+      --primary-dark: #0fa28d;
+      --dark: #15133c;
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --success: #16a34a;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --border: #e5e7eb;
+      --shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--dark), #27205f);
+      color: white;
+      padding: 28px 18px 36px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      margin-bottom: 8px;
+    }
+
+    header p {
+      color: #dbeafe;
+      font-size: 1rem;
+    }
+
+    .container {
+      width: min(1100px, 92%);
+      margin: -24px auto 40px;
+    }
+
+    .top-card {
+      background: var(--card);
+      border-radius: 22px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+      display: grid;
+      gap: 18px;
+    }
+
+    .status {
+      display: grid;
+      gap: 12px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+
+    .badge.train {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge.rest {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .info-box {
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .info-box small {
+      color: var(--muted);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .info-box strong {
+      font-size: 1.1rem;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin: 22px 0;
+    }
+
+    .tab-btn {
+      border: none;
+      background: white;
+      border: 1px solid var(--border);
+      padding: 14px 10px;
+      border-radius: 16px;
+      cursor: pointer;
+      font-weight: bold;
+      color: var(--text);
+      transition: 0.2s;
+      box-shadow: 0 5px 14px rgba(0,0,0,0.04);
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .tab-btn.locked {
+      opacity: 0.55;
+    }
+
+    .workout-card {
+      background: white;
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    .workout-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .workout-title h2 {
+      font-size: 1.6rem;
+      color: var(--dark);
+      margin-bottom: 6px;
+    }
+
+    .workout-title p {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .progress-area {
+      min-width: 220px;
+    }
+
+    .progress-text {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      color: var(--muted);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 12px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--success));
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+
+    .warning-box {
+      display: none;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+      padding: 14px;
+      border-radius: 16px;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .exercise-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .exercise {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      align-items: center;
+      border: 1px solid var(--border);
+      background: #fcfcfd;
+      border-radius: 18px;
+      padding: 14px;
+      transition: 0.2s;
+    }
+
+    .exercise.done {
+      background: #ecfdf5;
+      border-color: #bbf7d0;
+    }
+
+    .exercise input {
+      width: 22px;
+      height: 22px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    .exercise input:disabled {
+      cursor: not-allowed;
+    }
+
+    .exercise-name {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .exercise-detail {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .tag {
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #3730a3;
+      font-size: 0.8rem;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .btn {
+      border: none;
+      padding: 14px 18px;
+      border-radius: 16px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1rem;
+      transition: 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-secondary {
+      background: #f3f4f6;
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background: #e5e7eb;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .summary-card {
+      margin-top: 22px;
+      background: white;
+      border-radius: 22px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .summary-card h3 {
+      color: var(--dark);
+      margin-bottom: 12px;
+    }
+
+    .weekly-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .weekly-day {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      background: #f9fafb;
+    }
+
+    .weekly-day strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .weekly-day span {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%) translateY(120px);
+      background: var(--dark);
+      color: white;
+      padding: 14px 18px;
+      border-radius: 999px;
+      box-shadow: var(--shadow);
+      transition: 0.3s;
+      z-index: 99;
+      text-align: center;
+      width: max-content;
+      max-width: 90%;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      padding: 24px 12px 40px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        width: 94%;
+      }
+
+      .info-grid,
+      .weekly-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .tabs {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .workout-card,
+      .top-card,
+      .summary-card {
+        padding: 18px;
+      }
+
+      .exercise {
+        grid-template-columns: auto 1fr;
+      }
+
+      .tag {
+        grid-column: 2;
+        width: fit-content;
+      }
+
+      .actions {
+        grid-template-columns: 1fr;
+      }
+
+      .progress-area {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 420px) {
+      header {
+        padding-top: 24px;
+      }
+
+      .tabs {
+        grid-template-columns: 1fr;
+      }
+
+      .tab-btn {
+        padding: 13px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Mi Rutina de Gimnasio</h1>
+    <p>Bajar grasa, ganar músculo y llevar control de ejercicios completados</p>
+  </header>
+
+  <main class="container">
+    <section class="top-card">
+      <div class="status">
+        <span id="todayBadge" class="badge">Validando día...</span>
+        <h2 id="todayTitle">Cargando...</h2>
+        <p id="todayMessage">Estamos revisando si hoy tienes entrenamiento.</p>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-box">
+          <small>Peso actual</small>
+          <strong>75.7 kg / 167 lb aprox.</strong>
+        </div>
+        <div class="info-box">
+          <small>Objetivo</small>
+          <strong>Bajar grasa y ganar músculo</strong>
+        </div>
+      </div>
+    </section>
+
+    <nav class="tabs" id="tabs"></nav>
+
+    <section class="workout-card">
+      <div class="workout-header">
+        <div class="workout-title">
+          <h2 id="routineTitle">Rutina</h2>
+          <p id="routineDescription">Selecciona un día para ver los ejercicios.</p>
+        </div>
+
+        <div class="progress-area">
+          <div class="progress-text">
+            <span>Progreso</span>
+            <strong id="progressText">0%</strong>
+          </div>
+          <div class="progress-bar">
+            <div id="progressFill" class="progress-fill"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="warningBox" class="warning-box"></div>
+
+      <div id="exerciseList" class="exercise-list"></div>
+
+      <div class="actions">
+        <button id="finishBtn" class="btn btn-primary">Finalizar entrenamiento</button>
+        <button id="resetBtn" class="btn btn-secondary">Reiniciar ejercicios del día</button>
+      </div>
+    </section>
+
+    <section class="summary-card">
+      <h3>Resumen semanal</h3>
+      <div class="weekly-grid">
+        <div class="weekly-day">
+          <strong>Lunes</strong>
+          <span>Pecho, hombro, tríceps + cardio</span>
+        </div>
+        <div class="weekly-day">
+          <strong>Miércoles</strong>
+          <span>Espalda, bíceps + cardio</span>
+        </div>
+        <div class="weekly-day">
+          <strong>Viernes</strong>
+          <span>Pierna fuerte + abdomen, sin cardio</span>
+        </div>
+        <div class="weekly-day">
+          <strong>Sábado</strong>
+          <span>Cuerpo completo ligero + cardio</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Rutina personalizada para entrenar en Gimnasio Impulso.
+  </footer>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const routines = {
+      1: {
+        dayName: "Lunes",
+        title: "Lunes - Pecho, hombro y tríceps",
+        description: "Día de empuje. Al finalizar haces 30 minutos de cardio de baja intensidad.",
+        cardio: "Cardio baja intensidad: 30 minutos",
+        exercises: [
+          { name: "Press de pecho en máquina", detail: "4 series x 8-12 repeticiones", muscle: "Pecho" },
+          { name: "Press inclinado con mancuernas", detail: "3 series x 8-12 repeticiones", muscle: "Pecho" },
+          { name: "Pec deck o aperturas en polea", detail: "3 series x 12-15 repeticiones", muscle: "Pecho" },
+          { name: "Press de hombro en máquina", detail: "3 series x 8-12 repeticiones", muscle: "Hombro" },
+          { name: "Elevaciones laterales con mancuernas", detail: "3 series x 12-15 repeticiones", muscle: "Hombro" },
+          { name: "Extensión de tríceps en polea", detail: "3 series x 10-15 repeticiones", muscle: "Tríceps" },
+          { name: "Press francés con mancuerna o cuerda", detail: "3 series x 10-12 repeticiones", muscle: "Tríceps" },
+          { name: "Abdomen en máquina o crunch", detail: "3 series x 12-15 repeticiones", muscle: "Abdomen" },
+          { name: "Cardio en caminadora, bici o elíptica", detail: "30 minutos suave, que puedas hablar sin ahogarte", muscle: "Cardio" }
+        ]
+      },
+
+      3: {
+        dayName: "Miércoles",
+        title: "Miércoles - Espalda y bíceps",
+        description: "Día de jalón. Al finalizar haces 30 minutos de cardio de baja intensidad.",
+        cardio: "Cardio baja intensidad: 30 minutos",
+        exercises: [
+          { name: "Jalón al pecho en polea alta", detail: "4 series x 8-12 repeticiones", muscle: "Espalda" },
+          { name: "Remo sentado en polea", detail: "4 series x 8-12 repeticiones", muscle: "Espalda" },
+          { name: "Remo con mancuerna en banca", detail: "3 series x 10-12 repeticiones", muscle: "Espalda" },
+          { name: "Pull over en polea", detail: "3 series x 12-15 repeticiones", muscle: "Espalda" },
+          { name: "Face pull en polea", detail: "3 series x 12-15 repeticiones", muscle: "Hombro posterior" },
+          { name: "Curl bíceps con mancuernas", detail: "3 series x 10-12 repeticiones", muscle: "Bíceps" },
+          { name: "Curl martillo con mancuernas", detail: "3 series x 10-12 repeticiones", muscle: "Bíceps" },
+          { name: "Elevación de piernas o abdomen en banco", detail: "3 series x 12-15 repeticiones", muscle: "Abdomen" },
+          { name: "Cardio en caminadora, bici o elíptica", detail: "30 minutos suave, que puedas hablar sin ahogarte", muscle: "Cardio" }
+        ]
+      },
+
+      5: {
+        dayName: "Viernes",
+        title: "Viernes - Pierna fuerte y abdomen",
+        description: "Día fuerte de pierna. No hagas cardio para no sobrecargar.",
+        cardio: "Sin cardio",
+        exercises: [
+          { name: "Prensa de pierna", detail: "4 series x 10-15 repeticiones", muscle: "Pierna" },
+          { name: "Sentadilla en Smith o multipower", detail: "4 series x 8-12 repeticiones", muscle: "Pierna" },
+          { name: "Extensión de cuádriceps", detail: "3 series x 12-15 repeticiones", muscle: "Cuádriceps" },
+          { name: "Curl femoral sentado o acostado", detail: "3 series x 10-15 repeticiones", muscle: "Femoral" },
+          { name: "Peso muerto rumano con mancuernas", detail: "3 series x 8-12 repeticiones", muscle: "Femoral / glúteo" },
+          { name: "Pantorrilla en máquina o prensa", detail: "4 series x 12-20 repeticiones", muscle: "Pantorrilla" },
+          { name: "Plancha abdominal", detail: "3 series x 30-45 segundos", muscle: "Abdomen" },
+          { name: "Crunch o máquina abdominal", detail: "3 series x 12-15 repeticiones", muscle: "Abdomen" },
+          { name: "Estiramiento suave", detail: "5-10 minutos, sin cardio intenso", muscle: "Recuperación" }
+        ]
+      },
+
+      6: {
+        dayName: "Sábado",
+        title: "Sábado - Cuerpo completo ligero",
+        description: "Día para reforzar torso, brazos, abdomen y cardio. Pierna solo suave.",
+        cardio: "Cardio baja intensidad: 30 minutos",
+        exercises: [
+          { name: "Press de pecho en máquina", detail: "3 series x 10-12 repeticiones", muscle: "Pecho" },
+          { name: "Jalón al pecho agarre cerrado", detail: "3 series x 10-12 repeticiones", muscle: "Espalda" },
+          { name: "Remo en máquina o polea", detail: "3 series x 10-12 repeticiones", muscle: "Espalda" },
+          { name: "Press de hombro en máquina", detail: "3 series x 10-12 repeticiones", muscle: "Hombro" },
+          { name: "Zancadas suaves o sentadilla goblet ligera", detail: "2-3 series x 12 repeticiones", muscle: "Pierna suave" },
+          { name: "Curl bíceps en polea", detail: "3 series x 12 repeticiones", muscle: "Bíceps" },
+          { name: "Extensión tríceps en polea", detail: "3 series x 12 repeticiones", muscle: "Tríceps" },
+          { name: "Abdominales en máquina o crunch", detail: "3 series x 12-15 repeticiones", muscle: "Abdomen" },
+          { name: "Cardio en caminadora, bici o elíptica", detail: "30 minutos suave, que puedas hablar sin ahogarte", muscle: "Cardio" }
+        ]
+      }
+    };
+
+    const dayNames = [
+      "Domingo",
+      "Lunes",
+      "Martes",
+      "Miércoles",
+      "Jueves",
+      "Viernes",
+      "Sábado"
+    ];
+
+    const trainingDays = [1, 3, 5, 6];
+
+    const today = new Date();
+    const currentDay = today.getDay();
+    let selectedDay = trainingDays.includes(currentDay) ? currentDay : getNextTrainingDay(currentDay);
+
+    const tabs = document.getElementById("tabs");
+    const todayBadge = document.getElementById("todayBadge");
+    const todayTitle = document.getElementById("todayTitle");
+    const todayMessage = document.getElementById("todayMessage");
+    const routineTitle = document.getElementById("routineTitle");
+    const routineDescription = document.getElementById("routineDescription");
+    const exerciseList = document.getElementById("exerciseList");
+    const progressText = document.getElementById("progressText");
+    const progressFill = document.getElementById("progressFill");
+    const warningBox = document.getElementById("warningBox");
+    const finishBtn = document.getElementById("finishBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const toast = document.getElementById("toast");
+
+    function getDateKey() {
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, "0");
+      const day = String(today.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function getStorageKey(dayNumber) {
+      return `rutina-josue-${getDateKey()}-${dayNumber}`;
+    }
+
+    function getNextTrainingDay(day) {
+      for (let i = 1; i <= 7; i++) {
+        const next = (day + i) % 7;
+        if (trainingDays.includes(next)) return next;
+      }
+      return 1;
+    }
+
+    function validateToday() {
+      const isTrainingDay = trainingDays.includes(currentDay);
+
+      if (isTrainingDay) {
+        todayBadge.textContent = "Hoy toca entrenar";
+        todayBadge.className = "badge train";
+        todayTitle.textContent = `Hoy es ${dayNames[currentDay]}: ${routines[currentDay].title}`;
+        todayMessage.textContent = "Puedes marcar los ejercicios conforme los vayas completando.";
+      } else {
+        const nextDay = getNextTrainingDay(currentDay);
+        todayBadge.textContent = "Hoy es descanso";
+        todayBadge.className = "badge rest";
+        todayTitle.textContent = `Hoy es ${dayNames[currentDay]}`;
+        todayMessage.textContent = `No tienes rutina asignada hoy. Tu próximo entrenamiento es ${routines[nextDay].dayName}.`;
+      }
+    }
+
+    function createTabs() {
+      tabs.innerHTML = "";
+
+      trainingDays.forEach(day => {
+        const btn = document.createElement("button");
+        btn.className = "tab-btn";
+        btn.textContent = routines[day].dayName;
+        btn.dataset.day = day;
+
+        if (day !== currentDay) {
+          btn.classList.add("locked");
+        }
+
+        btn.addEventListener("click", () => {
+          selectedDay = day;
+          renderRoutine(day);
+        });
+
+        tabs.appendChild(btn);
+      });
+    }
+
+    function renderRoutine(day) {
+      const routine = routines[day];
+      const isTodayRoutine = day === currentDay;
+      const canCheck = isTodayRoutine && trainingDays.includes(currentDay);
+      const saved = JSON.parse(localStorage.getItem(getStorageKey(day))) || [];
+
+      routineTitle.textContent = routine.title;
+      routineDescription.textContent = routine.description;
+      exerciseList.innerHTML = "";
+
+      document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.classList.toggle("active", Number(btn.dataset.day) === day);
+      });
+
+      if (!canCheck) {
+        warningBox.style.display = "block";
+
+        if (!trainingDays.includes(currentDay)) {
+          warningBox.textContent = `Hoy es ${dayNames[currentDay]}, día de descanso. Puedes ver la rutina, pero solo podrás marcar ejercicios en un día de entrenamiento.`;
+        } else {
+          warningBox.textContent = `Estás viendo ${routine.dayName}, pero hoy es ${dayNames[currentDay]}. Para llevar control real, solo puedes marcar la rutina del día actual.`;
+        }
+      } else {
+        warningBox.style.display = "none";
+      }
+
+      routine.exercises.forEach((exercise, index) => {
+        const item = document.createElement("label");
+        item.className = "exercise";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = saved.includes(index);
+        checkbox.disabled = !canCheck;
+
+        if (checkbox.checked) {
+          item.classList.add("done");
+        }
+
+        checkbox.addEventListener("change", () => {
+          updateSavedProgress(day);
+        });
+
+        const content = document.createElement("div");
+
+        const name = document.createElement("div");
+        name.className = "exercise-name";
+        name.textContent = exercise.name;
+
+        const detail = document.createElement("div");
+        detail.className = "exercise-detail";
+        detail.textContent = exercise.detail;
+
+        content.appendChild(name);
+        content.appendChild(detail);
+
+        const tag = document.createElement("span");
+        tag.className = "tag";
+        tag.textContent = exercise.muscle;
+
+        item.appendChild(checkbox);
+        item.appendChild(content);
+        item.appendChild(tag);
+
+        exerciseList.appendChild(item);
+      });
+
+      finishBtn.disabled = !canCheck;
+      resetBtn.disabled = !canCheck;
+
+      updateProgress();
+    }
+
+    function updateSavedProgress(day) {
+      const checkedIndexes = [];
+
+      document.querySelectorAll(".exercise input").forEach((checkbox, index) => {
+        if (checkbox.checked) {
+          checkedIndexes.push(index);
+          checkbox.closest(".exercise").classList.add("done");
+        } else {
+          checkbox.closest(".exercise").classList.remove("done");
+        }
+      });
+
+      localStorage.setItem(getStorageKey(day), JSON.stringify(checkedIndexes));
+      updateProgress();
+    }
+
+    function updateProgress() {
+      const checkboxes = document.querySelectorAll(".exercise input");
+      const checked = document.querySelectorAll(".exercise input:checked");
+
+      if (checkboxes.length === 0) {
+        progressText.textContent = "0%";
+        progressFill.style.width = "0%";
+        return;
+      }
+
+      const percent = Math.round((checked.length / checkboxes.length) * 100);
+      progressText.textContent = `${percent}%`;
+      progressFill.style.width = `${percent}%`;
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2800);
+    }
+
+    finishBtn.addEventListener("click", () => {
+      const checkboxes = document.querySelectorAll(".exercise input");
+      const checked = document.querySelectorAll(".exercise input:checked");
+
+      if (checked.length === checkboxes.length) {
+        showToast("¡Excelente! Entrenamiento completado al 100%.");
+      } else {
+        const missing = checkboxes.length - checked.length;
+        showToast(`Te faltan ${missing} ejercicio(s) para completar la rutina.`);
+      }
+    });
+
+    resetBtn.addEventListener("click", () => {
+      const confirmReset = confirm("¿Seguro que quieres reiniciar los ejercicios marcados de hoy?");
+
+      if (!confirmReset) return;
+
+      localStorage.removeItem(getStorageKey(selectedDay));
+      renderRoutine(selectedDay);
+      showToast("Rutina reiniciada.");
+    });
+
+    validateToday();
+    createTabs();
+    renderRoutine(selectedDay);
+  </script>
+</body>
+</html>
