@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Dashboard para registrar soportes por ciclos y administrar finanzas personales."
+    >
+    <meta name="theme-color" content="#4f46e5">
+    <title>Sistema de Soportes</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    >
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    >
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+      rel="stylesheet"
+    >
+    <link rel="stylesheet" href="style.css">
+  </head>
+
+  <body>
+    <div id="loading-overlay" class="loading-overlay d-none" aria-live="polite">
+      <div class="loading-card">
+        <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+        <span id="loading-text">Cargando...</span>
+      </div>
+    </div>
+
+    <nav class="navbar navbar-expand-md app-navbar sticky-top" aria-label="Navegación principal">
+      <div class="container-xl navbar-shell">
+        <a class="navbar-brand" href="#ciclo" aria-label="Ir al inicio">
+          <span class="brand-mark" aria-hidden="true">🎧</span>
+          <span>Sistema <strong>Soportes</strong></span>
+        </a>
+
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#main-navigation"
+          aria-controls="main-navigation"
+          aria-expanded="false"
+          aria-label="Abrir navegación"
+        >
+          <i class="bi bi-list" aria-hidden="true"></i>
+        </button>
+
+        <div id="main-navigation" class="collapse navbar-collapse">
+          <div class="navbar-nav ms-auto nav-pills-shell">
+            <a class="nav-link" href="#ciclo">
+              <i class="bi bi-calendar3" aria-hidden="true"></i> Ciclo
+            </a>
+            <a class="nav-link" href="#estadisticas">
+              <i class="bi bi-bar-chart" aria-hidden="true"></i> Estadísticas
+            </a>
+            <a class="nav-link" href="#finanzas">
+              <i class="bi bi-wallet2" aria-hidden="true"></i> Finanzas
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="container-xl app-main">
+      <div id="api-config-alert" class="alert config-alert d-none" role="alert">
+        <i class="bi bi-plug-fill" aria-hidden="true"></i>
+        <div>
+          <strong>Falta conectar la base de datos.</strong>
+          Reemplaza <code>AQUI_URL_GOOGLE_APPS_SCRIPT</code> en <code>app.js</code>
+          con la URL terminada en <code>/exec</code> de tu Web App.
+        </div>
+      </div>
+
+      <section id="ciclo" class="page-section scroll-target" aria-labelledby="cycle-title">
+        <div class="cycle-hero">
+          <div class="cycle-copy">
+            <span class="eyebrow">CONTROL POR CICLOS</span>
+            <h1 id="cycle-title">Tu operación, en un solo lugar</h1>
+            <p>
+              Registra soportes del día 16 al 15 y consulta cada ciclo sin mezclarlo
+              con tus finanzas.
+            </p>
+          </div>
+
+          <div class="cycle-navigator" aria-label="Selector de ciclo">
+            <button
+              id="btn-ciclo-anterior"
+              class="btn cycle-arrow"
+              type="button"
+              title="Ciclo anterior"
+              aria-label="Ver ciclo anterior"
+            >
+              <i class="bi bi-chevron-left" aria-hidden="true"></i>
+            </button>
+
+            <div class="cycle-current text-center">
+              <span class="cycle-kicker">Ciclo seleccionado</span>
+              <strong id="ciclo-label">16 ago al 15 sep</strong>
+              <span id="ciclo-pago" class="cycle-payment">
+                Pago de referencia: 30 sep 2026
+              </span>
+            </div>
+
+            <button
+              id="btn-ciclo-siguiente"
+              class="btn cycle-arrow"
+              type="button"
+              title="Ciclo siguiente"
+              aria-label="Ver ciclo siguiente"
+            >
+              <i class="bi bi-chevron-right" aria-hidden="true"></i>
+            </button>
+          </div>
+
+          <form id="form-filtro-ciclo" class="cycle-filter" novalidate>
+            <div>
+              <label class="form-label" for="filtro-desde">Desde</label>
+              <input id="filtro-desde" class="form-control" type="date" required>
+            </div>
+            <div>
+              <label class="form-label" for="filtro-hasta">Hasta</label>
+              <input id="filtro-hasta" class="form-control" type="date" required>
+            </div>
+            <button class="btn btn-light filter-button" type="submit">
+              <i class="bi bi-funnel" aria-hidden="true"></i>
+              Filtrar
+            </button>
+          </form>
+        </div>
+
+        <div class="row g-4 mt-1 align-items-start">
+          <div class="col-12 col-lg-4">
+            <article class="app-card form-card sticky-lg-top card-sticky">
+              <div class="card-heading">
+                <span class="icon-box icon-indigo" aria-hidden="true">
+                  <i class="bi bi-headset"></i>
+                </span>
+                <div>
+                  <span class="section-kicker">REGISTRO</span>
+                  <h2>Nuevo soporte</h2>
+                </div>
+              </div>
+
+              <form id="form-soporte" class="form-grid" novalidate>
+                <div>
+                  <label class="form-label" for="soporte-fecha">Fecha</label>
+                  <input id="soporte-fecha" class="form-control" type="date" required>
+                  <div class="invalid-feedback">Selecciona una fecha.</div>
+                </div>
+
+                <div>
+                  <label class="form-label" for="soporte-cantidad">Cantidad</label>
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-hash"></i></span>
+                    <input
+                      id="soporte-cantidad"
+                      class="form-control"
+                      type="number"
+                      min="1"
+                      step="1"
+                      value="1"
+                      inputmode="numeric"
+                      required
+                    >
+                  </div>
+                  <div class="form-text">Debe ser un número entero mayor que cero.</div>
+                </div>
+
+                <fieldset>
+                  <legend class="form-label">¿A cobrar?</legend>
+                  <div class="segmented-control" role="radiogroup" aria-label="¿A cobrar?">
+                    <input
+                      id="cobrar-no"
+                      class="btn-check"
+                      type="radio"
+                      name="a-cobrar"
+                      value="No"
+                      checked
+                    >
+                    <label class="btn" for="cobrar-no">No</label>
+
+                    <input
+                      id="cobrar-si"
+                      class="btn-check"
+                      type="radio"
+                      name="a-cobrar"
+                      value="Sí"
+                    >
+                    <label class="btn" for="cobrar-si">Sí</label>
+                  </div>
+                </fieldset>
+
+                <div id="campos-factura" class="conditional-fields d-none">
+                  <div>
+                    <label class="form-label" for="soporte-precio">Precio</label>
+                    <select id="soporte-precio" class="form-select">
+                      <option value="175">Q175</option>
+                      <option value="310">Q310</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="form-label" for="soporte-factura">
+                      Número de factura
+                      <span class="optional-label">Opcional</span>
+                    </label>
+                    <input
+                      id="soporte-factura"
+                      class="form-control"
+                      type="text"
+                      maxlength="100"
+                      autocomplete="off"
+                      placeholder="Ej. 12345"
+                    >
+                  </div>
+                </div>
+
+                <button id="btn-guardar-soporte" class="btn btn-primary btn-submit" type="submit">
+                  <i class="bi bi-plus-circle" aria-hidden="true"></i>
+                  Guardar soporte
+                </button>
+              </form>
+            </article>
+          </div>
+
+          <div class="col-12 col-lg-8">
+            <article class="app-card table-card">
+              <div class="table-card-header">
+                <div>
+                  <span class="section-kicker">DETALLE DEL CICLO</span>
+                  <h2>Soportes registrados</h2>
+                  <p id="soportes-subtitle">Los registros se agrupan por fecha.</p>
+                </div>
+                <button id="btn-enviar-facturado" class="btn btn-outline-primary" type="button">
+                  <i class="bi bi-envelope-paper" aria-hidden="true"></i>
+                  Enviar facturado
+                </button>
+              </div>
+
+              <div class="table-responsive app-table-wrap">
+                <table class="table app-table align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th scope="col">Fecha</th>
+                      <th scope="col">Cantidad</th>
+                      <th scope="col">Precios</th>
+                      <th scope="col">Facturas</th>
+                      <th scope="col" class="text-end">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="soportes-body">
+                    <tr>
+                      <td colspan="5">
+                        <div class="table-state">
+                          <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                          Cargando soportes...
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="estadisticas"
+        class="page-section scroll-target"
+        aria-labelledby="stats-title"
+      >
+        <div class="section-header">
+          <div>
+            <span class="eyebrow text-indigo">RENDIMIENTO</span>
+            <h2 id="stats-title">Estadísticas del ciclo</h2>
+            <p>Tu avance se calcula únicamente con el rango seleccionado.</p>
+          </div>
+          <span id="stats-cycle-badge" class="soft-badge">Ciclo actual</span>
+        </div>
+
+        <div class="row g-4">
+          <div class="col-12 col-md-4">
+            <article class="stat-card stat-primary">
+              <div class="stat-icon"><i class="bi bi-check2-circle" aria-hidden="true"></i></div>
+              <span>Soportes realizados</span>
+              <strong id="stat-realizados">0</strong>
+              <small>Meta: 100 por ciclo</small>
+            </article>
+          </div>
+          <div class="col-12 col-md-4">
+            <article class="stat-card stat-amber">
+              <div class="stat-icon"><i class="bi bi-bullseye" aria-hidden="true"></i></div>
+              <span>Faltantes para meta</span>
+              <strong id="stat-faltantes">100</strong>
+              <small id="stat-faltantes-copy">Continúa avanzando</small>
+            </article>
+          </div>
+          <div class="col-12 col-md-4">
+            <article class="stat-card stat-green">
+              <div class="stat-icon"><i class="bi bi-trophy" aria-hidden="true"></i></div>
+              <span>Estado de la meta</span>
+              <strong id="stat-porcentaje">0%</strong>
+              <small id="stat-meta-estado">En progreso</small>
+            </article>
+          </div>
+        </div>
+
+        <article class="app-card chart-card mt-4">
+          <div class="chart-heading">
+            <div>
+              <span class="section-kicker">DISTRIBUCIÓN</span>
+              <h3>Soportes por día</h3>
+            </div>
+            <span class="chart-legend"><i aria-hidden="true"></i> Cantidad</span>
+          </div>
+          <div class="chart-shell">
+            <canvas id="soportes-chart" aria-label="Gráfica de soportes por día"></canvas>
+          </div>
+        </article>
+      </section>
+
+      <section id="finanzas" class="page-section scroll-target" aria-labelledby="finance-title">
+        <div class="section-header finance-header">
+          <div>
+            <span class="eyebrow text-indigo">CONTROL PERSONAL</span>
+            <h2 id="finance-title">Finanzas</h2>
+            <p>Ingresos, gastos y el pago manual de cada ciclo de soportes.</p>
+          </div>
+
+          <form id="form-filtro-finanzas" class="finance-filter" novalidate>
+            <div>
+              <label class="visually-hidden" for="finanzas-mes">Mes</label>
+              <select id="finanzas-mes" class="form-select" aria-label="Mes"></select>
+            </div>
+            <div>
+              <label class="visually-hidden" for="finanzas-anio">Año</label>
+              <select id="finanzas-anio" class="form-select" aria-label="Año"></select>
+            </div>
+            <button class="btn btn-primary" type="submit">
+              <i class="bi bi-search" aria-hidden="true"></i>
+              Consultar
+            </button>
+          </form>
+        </div>
+
+        <div class="row g-4 align-items-stretch">
+          <div class="col-12 col-xl-5">
+            <article class="app-card form-card h-100">
+              <div class="card-heading">
+                <span class="icon-box icon-green" aria-hidden="true">
+                  <i class="bi bi-cash-stack"></i>
+                </span>
+                <div>
+                  <span class="section-kicker">NUEVO REGISTRO</span>
+                  <h3>Movimiento financiero</h3>
+                </div>
+              </div>
+
+              <form id="form-finanzas" class="finance-form" novalidate>
+                <div class="row g-3">
+                  <div class="col-12 col-sm-6">
+                    <label class="form-label" for="movimiento-fecha">Fecha</label>
+                    <input id="movimiento-fecha" class="form-control" type="date" required>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <label class="form-label" for="movimiento-periodo">Periodo</label>
+                    <select id="movimiento-periodo" class="form-select" required>
+                      <option value="Quincena">Quincena</option>
+                      <option value="Fin de Mes">Fin de mes</option>
+                    </select>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label" for="movimiento-descripcion">Descripción</label>
+                    <input
+                      id="movimiento-descripcion"
+                      class="form-control"
+                      type="text"
+                      maxlength="300"
+                      placeholder="Ej. Gasolina"
+                      required
+                    >
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <label class="form-label" for="movimiento-monto">Monto</label>
+                    <div class="input-group">
+                      <span class="input-group-text">Q</span>
+                      <input
+                        id="movimiento-monto"
+                        class="form-control"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        inputmode="decimal"
+                        placeholder="0.00"
+                        required
+                      >
+                    </div>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <label class="form-label" for="movimiento-tipo">Tipo</label>
+                    <select id="movimiento-tipo" class="form-select" required>
+                      <option value="Gasto">Gasto</option>
+                      <option value="Ingreso Extra">Ingreso extra</option>
+                      <option value="Pago Planilla">Pago planilla</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button id="btn-guardar-movimiento" class="btn btn-primary btn-submit mt-4" type="submit">
+                  <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                  Agregar movimiento
+                </button>
+              </form>
+            </article>
+          </div>
+
+          <div class="col-12 col-xl-7">
+            <div class="finance-summary h-100">
+              <div class="finance-period-label">
+                <span>Resumen de</span>
+                <strong id="finanzas-periodo-label">Agosto 2026</strong>
+              </div>
+
+              <div class="summary-grid">
+                <article class="summary-card summary-income">
+                  <span>Ingresos</span>
+                  <strong id="finanzas-ingresos">+Q0.00</strong>
+                  <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+                </article>
+                <article class="summary-card summary-expense">
+                  <span>Gastos</span>
+                  <strong id="finanzas-gastos">-Q0.00</strong>
+                  <i class="bi bi-arrow-down-right" aria-hidden="true"></i>
+                </article>
+                <article class="summary-card summary-balance">
+                  <span>Balance total</span>
+                  <strong id="finanzas-total">Q0.00</strong>
+                  <i class="bi bi-wallet2" aria-hidden="true"></i>
+                </article>
+              </div>
+
+              <div id="pago-soportes-card" class="support-payment-card">
+                <div class="support-payment-heading">
+                  <span class="support-payment-icon" aria-hidden="true">
+                    <i class="bi bi-headset"></i>
+                  </span>
+                  <div>
+                    <span>Pago de soportes del ciclo</span>
+                    <strong id="pago-soportes-rango">16 ago al 15 sep 2026</strong>
+                  </div>
+                </div>
+
+                <div class="support-payment-value">
+                  <span id="pago-soportes-calculo">0 soportes × Q14.50</span>
+                  <strong id="pago-soportes-total">Q0.00</strong>
+                  <small id="pago-soportes-fecha">Se registra al final del mes.</small>
+                </div>
+
+                <div class="support-payment-action">
+                  <button id="btn-agregar-pago-soportes" class="btn btn-support-payment" type="button">
+                    <i class="bi bi-plus-circle" aria-hidden="true"></i>
+                    Sumar a Finanzas
+                  </button>
+                  <span id="pago-soportes-estado" class="support-payment-status">
+                    Se agrega únicamente cuando tú lo decidas.
+                  </span>
+                </div>
+              </div>
+
+              <div class="finance-note">
+                <i class="bi bi-info-circle" aria-hidden="true"></i>
+                El pago se calcula con Q14.50 por soporte y solo se suma cuando utilizas el botón.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-4 mt-1">
+          <div class="col-12 col-xl-6">
+            <article class="app-card finance-panel">
+              <div class="finance-panel-title">
+                <div>
+                  <span class="period-dot dot-indigo" aria-hidden="true"></span>
+                  <div>
+                    <span class="section-kicker">PRIMER PERIODO</span>
+                    <h3>Quincena</h3>
+                  </div>
+                </div>
+                <strong id="total-quincena">Q0.00</strong>
+              </div>
+              <div class="table-responsive">
+                <table class="table finance-table align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th scope="col">Descripción</th>
+                      <th scope="col" class="text-end">Monto</th>
+                      <th scope="col" class="text-end">Eliminar</th>
+                    </tr>
+                  </thead>
+                  <tbody id="finanzas-quincena-body"></tbody>
+                </table>
+              </div>
+            </article>
+          </div>
+
+          <div class="col-12 col-xl-6">
+            <article class="app-card finance-panel">
+              <div class="finance-panel-title">
+                <div>
+                  <span class="period-dot dot-green" aria-hidden="true"></span>
+                  <div>
+                    <span class="section-kicker">SEGUNDO PERIODO</span>
+                    <h3>Fin de mes</h3>
+                  </div>
+                </div>
+                <strong id="total-fin-mes">Q0.00</strong>
+              </div>
+              <div class="table-responsive">
+                <table class="table finance-table align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th scope="col">Descripción</th>
+                      <th scope="col" class="text-end">Monto</th>
+                      <th scope="col" class="text-end">Eliminar</th>
+                    </tr>
+                  </thead>
+                  <tbody id="finanzas-fin-mes-body"></tbody>
+                </table>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <div class="container-xl">
+        <span>🎧 Sistema de Soportes</span>
+        <small>Soportes y finanzas, cada dato en su lugar.</small>
+      </div>
+    </footer>
+
+    <div
+      class="modal fade"
+      id="editar-soportes-modal"
+      tabindex="-1"
+      aria-labelledby="editar-soportes-title"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+        <div class="modal-content app-modal">
+          <div class="modal-header">
+            <div>
+              <span class="section-kicker">EDICIÓN INDIVIDUAL</span>
+              <h2 id="editar-soportes-title" class="modal-title">Editar soportes</h2>
+              <p id="editar-soportes-date" class="mb-0"></p>
+            </div>
+            <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div id="editar-soportes-list" class="modal-body edit-support-list"></div>
+          <div class="modal-footer">
+            <button class="btn btn-light" type="button" data-bs-dismiss="modal">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+      <div id="app-toast" class="toast app-toast" role="status" aria-live="polite" aria-atomic="true">
+        <div class="toast-body">
+          <i id="toast-icon" class="bi bi-check-circle-fill" aria-hidden="true"></i>
+          <span id="toast-message">Operación completada.</span>
+          <button class="btn-close ms-auto" type="button" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
