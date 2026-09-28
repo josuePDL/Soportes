@@ -3,363 +3,277 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Costos de Envío - Moto</title>
+    <title>Calculadora de Envíos - Angie</title>
     <style>
-    * {
-        box-sizing: border-box;
-    }
+        :root {
+            --primary-color: #27ae60;
+            --primary-hover: #219150;
+            --secondary-color: #2980b9;
+            --secondary-hover: #2471a3;
+            --text-main: #333;
+            --text-muted: #666;
+            --bg-body: #f4f7f6;
+            --bg-card: #ecf0f1;
+        }
 
-    body {
-        font-family: Arial, sans-serif;
-        background-color: #f4f7f6;
-        color: #333;
-        margin: 0;
-        padding: 20px;
-        min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-    }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    .container {
-        background-color: #fff;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        max-width: 520px;
-        width: 100%;
-    }
-
-    h2 {
-        text-align: center;
-        color: #2c3e50;
-        margin-bottom: 10px;
-        font-size: 26px;
-    }
-
-    .subtitulo {
-        text-align: center;
-        color: #666;
-        font-size: 14px;
-        margin-bottom: 25px;
-    }
-
-    .input-group {
-        margin-bottom: 18px;
-    }
-
-    label {
-        display: block;
-        margin-bottom: 8px;
-        font-weight: bold;
-        font-size: 15px;
-    }
-
-    input {
-        width: 100%;
-        padding: 12px;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        font-size: 16px;
-    }
-
-    .checkbox-group {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 18px;
-    }
-
-    .checkbox-group input {
-        width: auto;
-        min-width: 18px;
-        height: 18px;
-    }
-
-    .checkbox-group label {
-        margin: 0;
-        font-size: 15px;
-    }
-
-    .info {
-        background-color: #eafaf1;
-        border-left: 4px solid #27ae60;
-        padding: 12px;
-        border-radius: 6px;
-        font-size: 14px;
-        margin-bottom: 20px;
-        line-height: 1.5;
-    }
-
-    button {
-        width: 100%;
-        padding: 14px;
-        background-color: #27ae60;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        font-size: 16px;
-        cursor: pointer;
-        font-weight: bold;
-        margin-top: 10px;
-    }
-
-    button:hover {
-        background-color: #219150;
-    }
-
-    .resultados {
-        margin-top: 30px;
-    }
-
-    .card {
-        background-color: #ecf0f1;
-        padding: 20px;
-        border-radius: 8px;
-        width: 100%;
-    }
-
-    .card h3 {
-        margin-top: 0;
-        text-align: center;
-        border-bottom: 2px solid #bdc3c7;
-        padding-bottom: 10px;
-        color: #2c3e50;
-        font-size: 22px;
-    }
-
-    .total {
-        font-size: 30px;
-        font-weight: bold;
-        color: #27ae60;
-        text-align: center;
-        margin: 15px 0;
-        word-break: break-word;
-    }
-
-    .desglose {
-        font-size: 15px;
-        line-height: 1.8;
-        background-color: #fff;
-        padding: 15px;
-        border-radius: 6px;
-        border: 1px solid #ddd;
-    }
-
-    .linea {
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        border-bottom: 1px dashed #ddd;
-        padding: 6px 0;
-    }
-
-    .linea span {
-        flex: 1;
-    }
-
-    .linea strong {
-        text-align: right;
-        white-space: nowrap;
-    }
-
-    .linea:last-child {
-        border-bottom: none;
-    }
-
-    .nota-final {
-        font-size: 13px;
-        color: #666;
-        margin-top: 12px;
-        text-align: center;
-        line-height: 1.4;
-    }
-
-    @media (max-width: 600px) {
         body {
-            padding: 12px;
-            align-items: stretch;
-        }
-
-        .container {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
             padding: 20px;
-            border-radius: 8px;
-            max-width: 100%;
-        }
-
-        h2 {
-            font-size: 22px;
-        }
-
-        .subtitulo {
-            font-size: 13px;
-        }
-
-        input,
-        button {
-            font-size: 16px;
-        }
-
-        .card {
-            padding: 15px;
-        }
-
-        .card h3 {
-            font-size: 20px;
-        }
-
-        .total {
-            font-size: 26px;
-        }
-
-        .desglose {
-            font-size: 14px;
-            padding: 12px;
-        }
-
-        .linea {
-            flex-direction: column;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
             align-items: flex-start;
-            gap: 2px;
         }
 
-        .linea strong {
-            text-align: left;
-            white-space: normal;
-            color: #2c3e50;
-        }
-    }
-
-    @media (max-width: 360px) {
         .container {
-            padding: 16px;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            max-width: 520px;
+            width: 100%;
         }
 
-        h2 {
-            font-size: 20px;
-        }
+        h2 { text-align: center; color: #2c3e50; margin-bottom: 8px; font-size: 26px; }
+        .subtitulo { text-align: center; color: var(--text-muted); font-size: 14px; margin-bottom: 25px; }
 
-        .total {
-            font-size: 24px;
+        .input-group { margin-bottom: 20px; }
+        
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 15px; }
+        
+        input[type="number"] {
+            width: 100%; padding: 12px; border: 2px solid #e0e0e0;
+            border-radius: 8px; font-size: 16px; transition: border-color 0.3s ease;
         }
-    }
-</style>
+        input[type="number"]:focus { outline: none; border-color: var(--primary-color); }
+
+        .row-inputs {
+            display: flex;
+            gap: 15px;
+        }
+        .row-inputs .input-group { flex: 1; }
+
+        .checkbox-group { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 5px 0; }
+        .checkbox-group input { width: 20px; height: 20px; accent-color: var(--primary-color); cursor: pointer; }
+        .checkbox-group label { margin: 0; font-size: 15px; cursor: pointer; font-weight: normal; }
+
+        .btn-principal {
+            width: 100%; padding: 16px; background-color: var(--primary-color);
+            color: white; border: none; border-radius: 8px; font-size: 16px;
+            cursor: pointer; font-weight: bold; margin-top: 10px;
+            transition: all 0.2s ease;
+        }
+        .btn-principal:hover { background-color: var(--primary-hover); }
+
+        .btn-whatsapp {
+            width: 100%; padding: 14px; background-color: #25D366;
+            color: white; border: none; border-radius: 8px; font-size: 15px;
+            cursor: pointer; font-weight: bold; margin-top: 15px;
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+        }
+        .btn-whatsapp:hover { background-color: #20b858; }
+
+        .resultados { margin-top: 30px; display: none; }
+        .resultados.visible { display: block; animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { background-color: var(--bg-card); padding: 24px; border-radius: 10px; width: 100%; }
+        .card h3 { margin-top: 0; text-align: center; border-bottom: 2px solid #bdc3c7; padding-bottom: 12px; color: #2c3e50; font-size: 20px; }
+        
+        .total-envio { font-size: 28px; font-weight: bold; color: var(--primary-color); text-align: center; margin: 15px 0 5px 0; }
+        .total-cliente { font-size: 20px; font-weight: bold; color: #2c3e50; text-align: center; margin-bottom: 20px; }
+
+        .desglose { font-size: 14px; line-height: 1.8; background-color: #fff; padding: 16px; border-radius: 8px; border: 1px solid #ddd; }
+        .linea { display: flex; justify-content: space-between; border-bottom: 1px dashed #eee; padding: 6px 0; }
+        .linea:last-child { border-bottom: none; }
+        .linea.destacada { font-weight: bold; color: #2c3e50; background-color: #f8f9fa; padding: 8px; border-radius: 4px; margin-top: 5px; }
+
+        .toast {
+            visibility: hidden; min-width: 250px; background-color: #333; color: #fff;
+            text-align: center; border-radius: 8px; padding: 12px; position: fixed;
+            z-index: 1; left: 50%; bottom: 30px; transform: translateX(-50%);
+            font-size: 14px; opacity: 0; transition: opacity 0.3s, bottom 0.3s;
+        }
+        .toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .container { padding: 20px; }
+            .row-inputs { flex-direction: column; gap: 0; }
+            .total-envio { font-size: 24px; }
+        }
+    </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Cotizador de Envíos en Moto</h2>
-    <div class="subtitulo">Haojue DM 150 | Guatemala | Sin cálculo por peso</div>
+    <h2>Cotizador de Envíos</h2>
+    <div class="subtitulo">Gestión de Pedidos</div>
 
-    <div class="info">
-        Rendimiento usado: <strong>140 km por galón</strong><br>
-        Equivalente aproximado: <strong>37 km por litro</strong>
-    </div>
-    
-    <div class="input-group">
-        <label for="distancia">Distancia en kilómetros:</label>
-        <input type="number" id="distancia" placeholder="Ej: 15" min="0.1" step="0.1">
-    </div>
+    <form id="form-cotizador">
+        <!-- Novedad: Valor del producto -->
+        <div class="input-group">
+            <label for="precio-producto">Precio del Producto (Q) - Opcional:</label>
+            <input type="number" id="precio-producto" placeholder="Ej: 150.00" min="0" step="0.1">
+        </div>
 
-    <div class="checkbox-group">
-        <input type="checkbox" id="ida-vuelta">
-        <label for="ida-vuelta" style="margin: 0;">Calcular ida y vuelta</label>
-    </div>
-    
-    <div class="input-group">
-        <label for="tiempo">Tiempo en tráfico/minutos:</label>
-        <input type="number" id="tiempo" placeholder="Ej: 30" min="1">
-    </div>
+        <div class="row-inputs">
+            <div class="input-group">
+                <label for="distancia">Distancia ida (km):</label>
+                <input type="number" id="distancia" placeholder="Ej: 15" min="0.1" step="0.1" required>
+            </div>
+            <div class="input-group">
+                <label for="tiempo">Tiempo tráfico ida (min):</label>
+                <input type="number" id="tiempo" placeholder="Ej: 30" min="1" required>
+            </div>
+        </div>
 
-    <div class="input-group">
-        <label for="precio-gasolina">Precio de la gasolina por galón:</label>
-        <input type="number" id="precio-gasolina" placeholder="Ej: 35.00" min="1" step="0.1" value="35.00">
-    </div>
-    
-    <button onclick="calcularCostos()">Calcular Costo Final</button>
+        <div class="input-group" style="display: none;">
+            <!-- Oculto para que Angie no tenga que llenarlo cada vez, pero lo puedes cambiar aquí -->
+            <label for="precio-gasolina">Precio gasolina:</label>
+            <input type="number" id="precio-gasolina" value="35.00" required>
+        </div>
 
-    <div class="resultados" id="resultados-box" style="display: none;">
+        <!-- Condiciones especiales -->
+        <div style="background: #f8f9fa; padding: 10px 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #eee;">
+            <div class="checkbox-group">
+                <input type="checkbox" id="ida-vuelta">
+                <label for="ida-vuelta">Es viaje de ida y vuelta</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="lluvia">
+                <label for="lluvia">Está lloviendo (Recargo Q10.00)</label>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-principal">Calcular Total</button>
+    </form>
+
+    <div class="resultados" id="resultados-box">
         <div class="card">
-            <h3>Costo Estimado</h3>
-            <div class="total" id="total-moto">Q0.00</div>
+            <h3>Resumen para el Cliente</h3>
+            
+            <div class="total-envio" id="total-moto">Costo Envío: Q0.00</div>
+            <div class="total-cliente" id="total-cobrar">Total a Cobrar: Q0.00</div>
 
             <div class="desglose">
-                <strong>Desglose del cálculo:</strong><br><br>
-
-                <div class="linea">
-                    <span>Distancia calculada:</span>
-                    <strong id="distancia-final">0 km</strong>
+                <div class="linea"><span>Distancia y Tiempo total:</span> <strong id="metricas-finales">0 km | 0 min</strong></div>
+                <div class="linea"><span>Costo operativo (Gas/Desgaste):</span> <strong id="costo-operativo">Q0.00</strong></div>
+                <div class="linea"><span>Mano de obra (Tiempo):</span> <strong id="tiempo-moto">Q0.00</strong></div>
+                <div class="linea" id="linea-recargo" style="display: none; color: #d35400;">
+                    <span>Recargo por lluvia:</span> <strong>Q10.00</strong>
                 </div>
-
-                <div class="linea">
-                    <span>Costo por km:</span>
-                    <strong id="costo-km">Q0.00</strong>
-                </div>
-
-                <div class="linea">
-                    <span>Gasolina:</span>
-                    <strong id="gas-moto">Q0.00</strong>
-                </div>
-
-                <div class="linea">
-                    <span>Tiempo / mano de obra:</span>
-                    <strong id="tiempo-moto">Q0.00</strong>
-                </div>
-
-                <div class="linea">
-                    <span>Desgaste / mantenimiento:</span>
-                    <strong id="desgaste-moto">Q0.00</strong>
+                <div class="linea destacada">
+                    <span>Precio del Producto:</span> <strong id="display-producto">Q0.00</strong>
                 </div>
             </div>
 
-            <div class="nota-final">
-                Este cálculo no toma en cuenta peso, solo distancia, gasolina, tiempo y desgaste.
-            </div>
+            <button type="button" class="btn-whatsapp" id="btn-copiar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c-.003 1.396.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c.003-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.005-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/>
+                </svg>
+                Copiar mensaje para WhatsApp
+            </button>
         </div>
     </div>
 </div>
 
-<script>
-    function calcularCostos() {
-        const distancia = parseFloat(document.getElementById('distancia').value);
-        const tiempo = parseFloat(document.getElementById('tiempo').value);
-        const precioGasolina = parseFloat(document.getElementById('precio-gasolina').value);
-        const idaVuelta = document.getElementById('ida-vuelta').checked;
+<div id="toast" class="toast">¡Mensaje copiado al portapapeles!</div>
 
-        if (
-            isNaN(distancia) || 
-            isNaN(tiempo) || 
-            isNaN(precioGasolina) || 
-            distancia <= 0 || 
-            tiempo <= 0 || 
-            precioGasolina <= 0
-        ) {
-            alert("Por favor ingresa valores válidos en todos los campos.");
-            return;
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('form-cotizador');
+    const resultadosBox = document.getElementById('resultados-box');
+    const btnCopiar = document.getElementById('btn-copiar');
+    const toast = document.getElementById('toast');
+
+    // Estado global para guardar el texto a copiar
+    let mensajeWhatsApp = "";
+
+    const TARIFAS = {
+        kmPorGalon: 140,
+        costoPorMinuto: 0.40,
+        desgastePorKm: 0.30,
+        recargoLluvia: 10.00, // Q10 fijos si llueve
+        gananciaPorcentaje: 1.15 // 15% extra sobre el costo neto del envío como margen
+    };
+
+    const formatoMoneda = new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' });
+
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+
+        // 1. Obtener valores
+        const precioProducto = parseFloat(document.getElementById('precio-producto').value) || 0;
+        const distanciaBase = parseFloat(document.getElementById('distancia').value);
+        const tiempoBase = parseFloat(document.getElementById('tiempo').value);
+        const precioGasolina = parseFloat(document.getElementById('precio-gasolina').value);
+        
+        const idaVuelta = document.getElementById('ida-vuelta').checked;
+        const hayLluvia = document.getElementById('lluvia').checked;
+
+        // 2. Cálculos físicos
+        const distanciaFinal = idaVuelta ? distanciaBase * 2 : distanciaBase;
+        const tiempoFinal = idaVuelta ? tiempoBase * 2 : tiempoBase;
+        const costoPorKm = precioGasolina / TARIFAS.kmPorGalon;
+        
+        // 3. Costos monetarios
+        const motoGasolina = distanciaFinal * costoPorKm;
+        const motoTiempo = tiempoFinal * TARIFAS.costoPorMinuto;
+        const motoDesgaste = distanciaFinal * TARIFAS.desgastePorKm;
+        
+        // 4. Totales de envío
+        let costoNetoEnvio = motoGasolina + motoTiempo + motoDesgaste;
+        let costoEnvioConMargen = costoNetoEnvio * TARIFAS.gananciaPorcentaje;
+        
+        if (hayLluvia) {
+            costoEnvioConMargen += TARIFAS.recargoLluvia;
+            document.getElementById('linea-recargo').style.display = 'flex';
+        } else {
+            document.getElementById('linea-recargo').style.display = 'none';
         }
 
-        const kmPorGalon = 140; 
-        const costoPorMinuto = 0.40;
-        const desgastePorKm = 0.30;
+        // Redondear el envío a un número entero o más limpio (opcional, recomendado para ventas)
+        const totalEnvioCobrar = Math.ceil(costoEnvioConMargen); 
+        const granTotal = precioProducto + totalEnvioCobrar;
 
-        const distanciaFinal = idaVuelta ? distancia * 2 : distancia;
+        // 5. Actualizar UI
+        document.getElementById('total-moto').innerText = `Costo Envío: ${formatoMoneda.format(totalEnvioCobrar)}`;
+        document.getElementById('total-cobrar').innerText = `Total a Cobrar: ${formatoMoneda.format(granTotal)}`;
+        
+        document.getElementById('metricas-finales').innerText = `${distanciaFinal.toFixed(1)} km | ${tiempoFinal} min`;
+        document.getElementById('costo-operativo').innerText = formatoMoneda.format(motoGasolina + motoDesgaste);
+        document.getElementById('tiempo-moto').innerText = formatoMoneda.format(motoTiempo);
+        document.getElementById('display-producto').innerText = formatoMoneda.format(precioProducto);
 
-        const costoPorKm = precioGasolina / kmPorGalon;
-        const motoGasolina = distanciaFinal * costoPorKm;
-        const motoTiempo = tiempo * costoPorMinuto;
-        const motoDesgaste = distanciaFinal * desgastePorKm;
+        // 6. Preparar mensaje para WhatsApp
+        mensajeWhatsApp = `¡Hola! 👋 El total de tu pedido sería *${formatoMoneda.format(granTotal)}*.\n\n`;
+        if (precioProducto > 0) {
+            mensajeWhatsApp += `📦 Producto: ${formatoMoneda.format(precioProducto)}\n`;
+            mensajeWhatsApp += `🏍️ Envío: ${formatoMoneda.format(totalEnvioCobrar)}\n\n`;
+        }
+        mensajeWhatsApp += `¿Me confirmas si deseas proceder con la entrega? 😊`;
 
-        const motoTotal = motoGasolina + motoTiempo + motoDesgaste;
+        resultadosBox.classList.add('visible');
+        if (window.innerWidth <= 600) { resultadosBox.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    });
 
-        document.getElementById('resultados-box').style.display = 'block';
-
-        document.getElementById('total-moto').innerText = "Q" + motoTotal.toFixed(2);
-        document.getElementById('distancia-final').innerText = distanciaFinal.toFixed(2) + " km";
-        document.getElementById('costo-km').innerText = "Q" + costoPorKm.toFixed(2);
-        document.getElementById('gas-moto').innerText = "Q" + motoGasolina.toFixed(2);
-        document.getElementById('tiempo-moto').innerText = "Q" + motoTiempo.toFixed(2);
-        document.getElementById('desgaste-moto').innerText = "Q" + motoDesgaste.toFixed(2);
-    }
+    // Función para copiar al portapapeles
+    btnCopiar.addEventListener('click', () => {
+        navigator.clipboard.writeText(mensajeWhatsApp).then(() => {
+            // Mostrar notificación Toast
+            toast.className = "toast show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+        }).catch(err => {
+            console.error('Error al copiar: ', err);
+            alert("No se pudo copiar el texto. Intenta de nuevo.");
+        });
+    });
+});
 </script>
 
 </body>
