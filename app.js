@@ -26,6 +26,18 @@ const APP_CONFIG = Object.freeze({
   ])
 });
 
+const MONEY_FORMATTER = new Intl.NumberFormat(APP_CONFIG.LOCALE, {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2
+});
+
+const GT_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  timeZone: APP_CONFIG.TIMEZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit"
+});
+
 const state = {
   cycle: null,
   supports: [],
@@ -58,13 +70,7 @@ function isApiConfigured() {
 }
 
 function getTodayInGuatemala() {
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone: APP_CONFIG.TIMEZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
-  });
-  const parts = formatter.formatToParts(new Date());
+  const parts = GT_DATE_FORMATTER.formatToParts(new Date());
   const values = {};
   parts.forEach((part) => {
     if (part.type !== "literal") values[part.type] = part.value;
@@ -82,13 +88,6 @@ function parseSqlDate(sqlDate) {
   };
 }
 
-function toSQLDate(date) {
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(date.getUTCDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 function sqlFromParts(year, month, day) {
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
@@ -97,7 +96,7 @@ function shiftMonth(year, month, delta) {
   const zeroBased = year * 12 + (month - 1) + delta;
   return {
     year: Math.floor(zeroBased / 12),
-    month: ((zeroBased % 12) + 12) % 12 + 1
+    month: (((zeroBased % 12) + 12) % 12) + 1
   };
 }
 
@@ -150,11 +149,21 @@ function formatCycleRange(desde, hasta) {
 function formatMoney(value) {
   const number = Number(value) || 0;
   const sign = number < 0 ? "-" : "";
-  const formatted = new Intl.NumberFormat(APP_CONFIG.LOCALE, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(Math.abs(number));
-  return `${sign}Q${formatted}`;
+  return `${sign}Q${MONEY_FORMATTER.format(Math.abs(number))}`;
+}
+
+function parseServicePrice(rawValue) {
+  const trimmed = String(rawValue ?? "").trim();
+  if (!trimmed) return "";
+  const numeric = Number(trimmed);
+  return Number.isFinite(numeric) ? numeric : trimmed;
+}
+
+function formatServicePrice(rawValue) {
+  const parsed = parseServicePrice(rawValue);
+  if (parsed === "") return "—";
+  if (typeof parsed === "number") return formatMoney(parsed);
+  return parsed.toLowerCase() === "sabado" ? "Sábado" : parsed;
 }
 
 function escapeHtml(value) {
@@ -247,7 +256,7 @@ async function parseApiResponse(response) {
 
   try {
     payload = JSON.parse(text);
-  } catch (error) {
+  } catch {
     if (/<!doctype|<html/i.test(text)) {
       throw new Error(
         "Google Apps Script devolvió una página en lugar de JSON. Revisa que el Web App esté publicado para cualquier usuario."
@@ -330,6 +339,7 @@ function cacheElements() {
     statRemaining: $("stat-faltantes"),
     statRemainingCopy: $("stat-faltantes-copy"),
     statPercentage: $("stat-porcentaje"),
+    statProgressBar: $("stat-progress-bar"),
     statGoalStatus: $("stat-meta-estado"),
     statsCycleBadge: $("stats-cycle-badge"),
     supportsChart: $("soportes-chart"),
@@ -399,6 +409,29 @@ function setupFinanceSelectors(today) {
   }
 }
 
+function setupScrollSpy() {
+  if (!("IntersectionObserver" in window)) return;
+  const links = document.querySelectorAll(".navbar-nav .nav-link[data-section]");
+  const sections = document.querySelectorAll("main .page-section[id]");
+  if (!links.length || !sections.length) return;
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const activeId = entry.target.id;
+          links.forEach((link) => {
+            link.classList.toggle("active", link.dataset.section === activeId);
+          });
+        }
+      });
+    },
+    { rootMargin: "-30% 0px -60% 0px", threshold: 0 }
+  );
+
+  sections.forEach((section) => observer.observe(section));
+}
+
 function bindEvents() {
   on(state.elements.previousCycle, "click", () => changeCycle(-1));
   on(state.elements.nextCycle, "click", () => changeCycle(1));
@@ -436,6 +469,7 @@ async function initializeApp() {
   cacheElements();
   setupBootstrap();
   bindEvents();
+  setupScrollSpy();
 
   const today = getTodayInGuatemala();
   if (state.elements.supportDate) state.elements.supportDate.value = today;
@@ -585,19 +619,50 @@ function handleCycleFilter(event) {
 
 async function loadSupports() {
   if (!state.cycle) return;
+  const { desde, hasta } = state.cycle;
+  const completeCycle = isCompleteSupportCycle(state.cycle);
+
   try {
-    const data = await apiGet("listarSoportes", {
-      desde: state.cycle.desde,
-      hasta: state.cycle.hasta
-    });
-    state.supports = Array.isArray(data) ? data : [];
+    const [supportsData, paymentResult] = await Promise.all([
+      apiGet("listarSoportes", { desde, hasta }),
+      completeCycle && isApiConfigured()
+        ? apiGet("obtenerPagoSoportes", { desde, hasta })
+            .then((data) => ({ ok: true, data }))
+            .catch((error) => ({ ok: false, error }))
+        : Promise.resolve(null)
+    ]);
+
+    state.supports = Array.isArray(supportsData) ? supportsData : [];
     renderSupports();
     renderStatistics();
-    await loadSupportPaymentStatus();
+
+    const localPayment = createLocalSupportPayment();
+    if (!paymentResult) {
+      state.supportPayment = localPayment;
+    } else if (paymentResult.ok) {
+      state.supportPayment = {
+        ...localPayment,
+        ...paymentResult.data,
+        cicloCompleto: true,
+        error: ""
+      };
+    } else {
+      console.error(paymentResult.error);
+      state.supportPayment = {
+        ...localPayment,
+        error:
+          paymentResult.error instanceof Error
+            ? paymentResult.error.message
+            : "No se pudo consultar el pago."
+      };
+    }
+    renderSupportPayment();
   } catch (error) {
     state.supports = [];
     renderSupports("No se pudieron cargar los soportes.");
     renderStatistics();
+    state.supportPayment = createLocalSupportPayment();
+    renderSupportPayment();
     throw error;
   }
 }
@@ -634,7 +699,8 @@ async function handleSupportSubmit(event) {
     fecha: date,
     cantidad: quantity,
     aCobrar: billable,
-    precioServicio: billable === "Sí" ? Number(state.elements.supportPrice?.value) : "",
+    precioServicio:
+      billable === "Sí" ? parseServicePrice(state.elements.supportPrice?.value) : "",
     numeroFactura: billable === "Sí" ? state.elements.supportInvoice?.value.trim() : ""
   };
 
@@ -695,12 +761,16 @@ function renderSupports(errorMessage = "") {
       const billable = group.records.filter((record) => record.ACobrar === "Sí");
       const prices = billable.length
         ? billable
-            .map(
-              (record) =>
-                `<span class="data-tag">${escapeHtml(formatMoney(record.PrecioServicio))}</span>`
-            )
+            .map((record) => {
+              const parsed = parseServicePrice(record.PrecioServicio);
+              const isSpecial = typeof parsed === "string" && parsed !== "";
+              return `<span class="data-tag${isSpecial ? " tag-special" : ""}">${escapeHtml(
+                formatServicePrice(record.PrecioServicio)
+              )}</span>`;
+            })
             .join("")
         : '<span class="empty-mark">—</span>';
+
       const invoices = billable.length
         ? billable
             .map((record) =>
@@ -804,11 +874,16 @@ function openEditSupports(date) {
   state.elements.editSupportsList.innerHTML = records
     .map((record, index) => {
       const isBillable = record.ACobrar === "Sí";
+      const currentPrice = String(record.PrecioServicio ?? "").trim();
+      const isSabado = currentPrice.toLowerCase() === "sabado" || currentPrice.toLowerCase() === "sábado";
+      const is310 = Number(currentPrice) === 310;
+      const is175 = !isSabado && !is310;
+
       return `
         <form class="edit-support-item" data-support-id="${escapeHtml(record.ID)}" novalidate>
           <div class="edit-support-item-header">
             <strong>Registro ${index + 1}</strong>
-            <span>ID ${escapeHtml(record.ID.slice(0, 8))}</span>
+            <span>ID ${escapeHtml(String(record.ID || "").slice(0, 8))}</span>
           </div>
           <div class="edit-support-grid">
             <div>
@@ -823,10 +898,11 @@ function openEditSupports(date) {
               </select>
             </div>
             <div>
-              <label class="form-label" for="edit-price-${index}">Precio</label>
+              <label class="form-label" for="edit-price-${index}">Precio / Tarifa</label>
               <select id="edit-price-${index}" class="form-select" data-field="precioServicio"${isBillable ? "" : " disabled"}>
-                <option value="175"${Number(record.PrecioServicio) === 175 ? " selected" : ""}>Q175</option>
-                <option value="310"${Number(record.PrecioServicio) === 310 ? " selected" : ""}>Q310</option>
+                <option value="175"${is175 ? " selected" : ""}>Q175.00</option>
+                <option value="310"${is310 ? " selected" : ""}>Q310.00</option>
+                <option value="Sabado"${isSabado ? " selected" : ""}>Sábado</option>
               </select>
             </div>
             <div>
@@ -881,7 +957,7 @@ async function handleEditSupportSubmit(event) {
     aCobrar: billable,
     precioServicio:
       billable === "Sí"
-        ? Number(form.querySelector('[data-field="precioServicio"]')?.value)
+        ? parseServicePrice(form.querySelector('[data-field="precioServicio"]')?.value)
         : "",
     numeroFactura:
       billable === "Sí"
@@ -927,16 +1003,16 @@ function processInvoicedEmail() {
       formatDate(record.Fecha, { day: "2-digit", month: "2-digit", year: "numeric" }),
       `Factura: ${record.NumeroFactura}`,
       `Cantidad: ${Number(record.Cantidad) || 0}`,
-      formatMoney(record.PrecioServicio),
+      `Tarifa: ${formatServicePrice(record.PrecioServicio)}`,
       ""
     );
   });
 
-  const total = invoiced.reduce(
-    (sum, record) => sum + (Number(record.PrecioServicio) || 0),
-    0
-  );
-  lines.push("Total facturado:", formatMoney(total));
+  const total = invoiced.reduce((sum, record) => {
+    const parsed = parseServicePrice(record.PrecioServicio);
+    return sum + (typeof parsed === "number" ? parsed : 0);
+  }, 0);
+  lines.push("Total facturado (Q):", formatMoney(total));
 
   const subject = `Facturados · ${formatCycleRange(
     state.cycle.desde,
@@ -968,6 +1044,9 @@ function renderStatistics() {
     reached ? "Meta alcanzada ✅" : "Continúa avanzando"
   );
   setText(state.elements.statPercentage, `${percentage}%`);
+  if (state.elements.statProgressBar) {
+    state.elements.statProgressBar.style.width = `${Math.min(100, percentage)}%`;
+  }
   setText(state.elements.statGoalStatus, reached ? "Meta alcanzada ✅" : "En progreso");
   renderSupportsChart();
 }
@@ -983,7 +1062,7 @@ function isCompleteSupportCycle(cycle = state.cycle) {
   try {
     const expected = getCycleForDate(cycle.desde);
     return expected.desde === cycle.desde && expected.hasta === cycle.hasta;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
@@ -1167,8 +1246,7 @@ async function handleSupportPayment() {
         state.elements.financeMonth.value = String(paymentDate.month);
         state.elements.financeYear.value = String(paymentDate.year);
       }
-      await loadFinances();
-      await loadSupportPaymentStatus();
+      await Promise.all([loadFinances(), loadSupportPaymentStatus()]);
       showToast(updating ? "Pago de soportes actualizado." : "Pago de soportes agregado.");
     });
   } catch (error) {
@@ -1221,20 +1299,28 @@ function renderFinance(errorMessage = "") {
     `${APP_CONFIG.MESES[month - 1]} ${year}`
   );
 
-  const income = state.finances
-    .filter((record) => record.Tipo !== "Gasto")
-    .reduce((sum, record) => sum + (Number(record.Monto) || 0), 0);
-  const expenses = state.finances
-    .filter((record) => record.Tipo === "Gasto")
-    .reduce((sum, record) => sum + (Number(record.Monto) || 0), 0);
+  let income = 0;
+  let expenses = 0;
+  const fortnight = [];
+  const monthEnd = [];
+
+  state.finances.forEach((record) => {
+    const amount = Number(record.Monto) || 0;
+    if (record.Tipo === "Gasto") {
+      expenses += amount;
+    } else {
+      income += amount;
+    }
+    if (record.Periodo === "Quincena") fortnight.push(record);
+    else if (record.Periodo === "Fin de Mes") monthEnd.push(record);
+  });
+
   const balance = income - expenses;
 
   setText(state.elements.financeIncome, `+${formatMoney(income)}`);
   setText(state.elements.financeExpenses, `-${formatMoney(expenses)}`);
   setText(state.elements.financeTotal, formatMoney(balance));
 
-  const fortnight = state.finances.filter((record) => record.Periodo === "Quincena");
-  const monthEnd = state.finances.filter((record) => record.Periodo === "Fin de Mes");
   renderFinancePanel(
     fortnight,
     state.elements.fortnightBody,
@@ -1453,7 +1539,7 @@ function renderSupportsChart() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: { duration: 450 },
+      animation: { duration: 400 },
       interaction: { intersect: false, mode: "index" },
       plugins: {
         legend: { display: false },
