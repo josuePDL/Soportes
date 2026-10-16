@@ -56,13 +56,13 @@
 
         <div id="main-navigation" class="collapse navbar-collapse">
           <div class="navbar-nav ms-auto nav-pills-shell">
-            <a class="nav-link" href="#ciclo">
+            <a class="nav-link active" href="#ciclo" data-section="ciclo">
               <i class="bi bi-calendar3" aria-hidden="true"></i> Ciclo
             </a>
-            <a class="nav-link" href="#estadisticas">
+            <a class="nav-link" href="#estadisticas" data-section="estadisticas">
               <i class="bi bi-bar-chart" aria-hidden="true"></i> Estadísticas
             </a>
-            <a class="nav-link" href="#finanzas">
+            <a class="nav-link" href="#finanzas" data-section="finanzas">
               <i class="bi bi-wallet2" aria-hidden="true"></i> Finanzas
             </a>
           </div>
@@ -75,11 +75,12 @@
         <i class="bi bi-plug-fill" aria-hidden="true"></i>
         <div>
           <strong>Falta conectar la base de datos.</strong>
-          Reemplaza <code>AQUI_URL_GOOGLE_APPS_SCRIPT</code> en <code>app.js</code>
+          Reemplaza <code>API_URL</code> en <code>app.js</code>
           con la URL terminada en <code>/exec</code> de tu Web App.
         </div>
       </div>
 
+      <!-- SECCIÓN: CICLO -->
       <section id="ciclo" class="page-section scroll-target" aria-labelledby="cycle-title">
         <div class="cycle-hero">
           <div class="cycle-copy">
@@ -104,9 +105,9 @@
 
             <div class="cycle-current text-center">
               <span class="cycle-kicker">Ciclo seleccionado</span>
-              <strong id="ciclo-label">16 ago al 15 sep</strong>
+              <strong id="ciclo-label">Cargando ciclo...</strong>
               <span id="ciclo-pago" class="cycle-payment">
-                Pago de referencia: 30 sep 2026
+                Calculando fecha de pago...
               </span>
             </div>
 
@@ -154,13 +155,12 @@
                 <div>
                   <label class="form-label" for="soporte-fecha">Fecha</label>
                   <input id="soporte-fecha" class="form-control" type="date" required>
-                  <div class="invalid-feedback">Selecciona una fecha.</div>
                 </div>
 
                 <div>
                   <label class="form-label" for="soporte-cantidad">Cantidad</label>
                   <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-hash"></i></span>
+                    <span class="input-group-text"><i class="bi bi-hash" aria-hidden="true"></i></span>
                     <input
                       id="soporte-cantidad"
                       class="form-control"
@@ -201,12 +201,11 @@
 
                 <div id="campos-factura" class="conditional-fields d-none">
                   <div>
-                    <label class="form-label" for="soporte-precio">Precio</label>
-                    <select id="soporte-precio" class="form-select">
-                      <option value="175">Q175</option>
-                      <option value="310">Q310</option>
-                      <option value="Sabado">Sabado</option>
-
+                    <label class="form-label" for="soporte-precio">Precio / Tarifa</label>
+                    <select id="soporte-precio" class="form-select" disabled>
+                      <option value="175">Q175.00</option>
+                      <option value="310">Q310.00</option>
+                      <option value="Sabado">Sábado</option>
                     </select>
                   </div>
                   <div>
@@ -221,6 +220,7 @@
                       maxlength="100"
                       autocomplete="off"
                       placeholder="Ej. 12345"
+                      disabled
                     >
                   </div>
                 </div>
@@ -275,6 +275,7 @@
         </div>
       </section>
 
+      <!-- SECCIÓN: ESTADÍSTICAS -->
       <section
         id="estadisticas"
         class="page-section scroll-target"
@@ -294,7 +295,7 @@
             <article class="stat-card stat-primary">
               <div class="stat-icon"><i class="bi bi-check2-circle" aria-hidden="true"></i></div>
               <span>Soportes realizados</span>
-              <strong id="stat-realizados">0</strong>
+              <strong id="stat-realizados" class="tabular-nums">0</strong>
               <small>Meta: 100 por ciclo</small>
             </article>
           </div>
@@ -302,7 +303,7 @@
             <article class="stat-card stat-amber">
               <div class="stat-icon"><i class="bi bi-bullseye" aria-hidden="true"></i></div>
               <span>Faltantes para meta</span>
-              <strong id="stat-faltantes">100</strong>
+              <strong id="stat-faltantes" class="tabular-nums">100</strong>
               <small id="stat-faltantes-copy">Continúa avanzando</small>
             </article>
           </div>
@@ -310,7 +311,10 @@
             <article class="stat-card stat-green">
               <div class="stat-icon"><i class="bi bi-trophy" aria-hidden="true"></i></div>
               <span>Estado de la meta</span>
-              <strong id="stat-porcentaje">0%</strong>
+              <strong id="stat-porcentaje" class="tabular-nums">0%</strong>
+              <div class="goal-progress-track" aria-hidden="true">
+                <div id="stat-progress-bar" class="goal-progress-fill" style="width: 0%"></div>
+              </div>
               <small id="stat-meta-estado">En progreso</small>
             </article>
           </div>
@@ -330,6 +334,7 @@
         </article>
       </section>
 
+      <!-- SECCIÓN: FINANZAS -->
       <section id="finanzas" class="page-section scroll-target" aria-labelledby="finance-title">
         <div class="section-header finance-header">
           <div>
@@ -429,23 +434,23 @@
             <div class="finance-summary h-100">
               <div class="finance-period-label">
                 <span>Resumen de</span>
-                <strong id="finanzas-periodo-label">Agosto 2026</strong>
+                <strong id="finanzas-periodo-label">—</strong>
               </div>
 
               <div class="summary-grid">
                 <article class="summary-card summary-income">
                   <span>Ingresos</span>
-                  <strong id="finanzas-ingresos">+Q0.00</strong>
+                  <strong id="finanzas-ingresos" class="tabular-nums">+Q0.00</strong>
                   <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
                 </article>
                 <article class="summary-card summary-expense">
                   <span>Gastos</span>
-                  <strong id="finanzas-gastos">-Q0.00</strong>
+                  <strong id="finanzas-gastos" class="tabular-nums">-Q0.00</strong>
                   <i class="bi bi-arrow-down-right" aria-hidden="true"></i>
                 </article>
                 <article class="summary-card summary-balance">
                   <span>Balance total</span>
-                  <strong id="finanzas-total">Q0.00</strong>
+                  <strong id="finanzas-total" class="tabular-nums">Q0.00</strong>
                   <i class="bi bi-wallet2" aria-hidden="true"></i>
                 </article>
               </div>
@@ -457,13 +462,13 @@
                   </span>
                   <div>
                     <span>Pago de soportes del ciclo</span>
-                    <strong id="pago-soportes-rango">16 ago al 15 sep 2026</strong>
+                    <strong id="pago-soportes-rango">Selecciona un ciclo</strong>
                   </div>
                 </div>
 
                 <div class="support-payment-value">
-                  <span id="pago-soportes-calculo">0 soportes × Q14.50</span>
-                  <strong id="pago-soportes-total">Q0.00</strong>
+                  <span id="pago-soportes-calculo" class="tabular-nums">0 soportes × Q14.50</span>
+                  <strong id="pago-soportes-total" class="tabular-nums">Q0.00</strong>
                   <small id="pago-soportes-fecha">Se registra al final del mes.</small>
                 </div>
 
@@ -497,7 +502,7 @@
                     <h3>Quincena</h3>
                   </div>
                 </div>
-                <strong id="total-quincena">Q0.00</strong>
+                <strong id="total-quincena" class="tabular-nums">Q0.00</strong>
               </div>
               <div class="table-responsive">
                 <table class="table finance-table align-middle mb-0">
@@ -524,7 +529,7 @@
                     <h3>Fin de mes</h3>
                   </div>
                 </div>
-                <strong id="total-fin-mes">Q0.00</strong>
+                <strong id="total-fin-mes" class="tabular-nums">Q0.00</strong>
               </div>
               <div class="table-responsive">
                 <table class="table finance-table align-middle mb-0">
@@ -551,6 +556,7 @@
       </div>
     </footer>
 
+    <!-- MODAL DE EDICIÓN -->
     <div
       class="modal fade"
       id="editar-soportes-modal"
@@ -576,6 +582,7 @@
       </div>
     </div>
 
+    <!-- TOAST -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3">
       <div id="app-toast" class="toast app-toast" role="status" aria-live="polite" aria-atomic="true">
         <div class="toast-body">
@@ -586,8 +593,8 @@
       </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-    <script src="app.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script defer src="app.js"></script>
   </body>
 </html>
