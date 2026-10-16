@@ -2,7 +2,7 @@
    CONFIGURACIÓN
    ================================================================ */
 
-const API_URL = "https://script.google.com/macros/s/AKfycbx7goeSzbMiNWvCgsvlSJfptB76D12ChtSOz1HCNpK9URTp-3Hicbb_Ay6eccS__WXebA/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxX2oWoy44MKimnBsxz53N3X9JpsaSu0g9FYNRvIVuVEgKO5dsGIfJ9Yln6mjQG5HvYqA/exec";
 
 const APP_CONFIG = Object.freeze({
   TIMEZONE: "America/Guatemala",
