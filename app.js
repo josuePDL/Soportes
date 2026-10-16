@@ -1515,8 +1515,9 @@ function renderSupportsChart() {
   const values = groups.length ? groups.map((group) => group.quantity) : [0];
   const context = canvas.getContext("2d");
   const gradient = context.createLinearGradient(0, 0, 0, 300);
-  gradient.addColorStop(0, "rgba(79, 70, 229, 0.95)");
-  gradient.addColorStop(1, "rgba(99, 102, 241, 0.36)");
+  // Degradado Azul Atómico (Godzilla)
+  gradient.addColorStop(0, "rgba(2, 132, 199, 0.96)");
+  gradient.addColorStop(1, "rgba(0, 210, 255, 0.35)");
 
   if (state.chart) state.chart.destroy();
   state.chart = new Chart(context, {
@@ -1528,7 +1529,7 @@ function renderSupportsChart() {
           label: "Soportes",
           data: values,
           backgroundColor: gradient,
-          borderColor: "#4f46e5",
+          borderColor: "#0284c7",
           borderWidth: 1,
           borderRadius: 8,
           borderSkipped: false,
@@ -1544,7 +1545,7 @@ function renderSupportsChart() {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: "#0f172a",
+          backgroundColor: "#041e34",
           padding: 11,
           cornerRadius: 10,
           displayColors: false,
@@ -1583,7 +1584,6 @@ function renderSupportsChart() {
     }
   });
 }
-
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", initializeApp);
 } else {
