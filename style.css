@@ -7,10 +7,12 @@
   --slate-50: #f8fafc;
   --slate-100: #f1f5f9;
   --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
   --slate-400: #94a3b8;
   --slate-500: #64748b;
   --slate-600: #475569;
   --slate-700: #334155;
+  --slate-800: #1e293b;
   --slate-900: #0f172a;
   --green-50: #ecfdf5;
   --green-500: #10b981;
@@ -28,7 +30,9 @@
   --shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.08);
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -68,10 +72,19 @@ a {
   text-decoration: none;
 }
 
+.tabular-nums,
+.quantity-pill,
+.money-income,
+.money-expense,
+.data-tag {
+  font-variant-numeric: tabular-nums;
+}
+
 .text-indigo {
   color: var(--indigo-600) !important;
 }
 
+/* NAVBAR */
 .app-navbar {
   padding: 0.78rem 0;
   border-bottom: 1px solid rgba(226, 232, 240, 0.82);
@@ -141,19 +154,27 @@ a {
   min-height: 38px;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.5rem 0.8rem;
+  padding: 0.5rem 0.85rem;
   border-radius: 12px;
   color: var(--slate-600);
   font-size: 0.84rem;
   font-weight: 600;
+  transition: all 160ms ease;
 }
 
 .nav-pills-shell .nav-link:hover,
 .nav-pills-shell .nav-link:focus {
   color: var(--indigo-600);
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.7);
 }
 
+.nav-pills-shell .nav-link.active {
+  color: var(--indigo-600);
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+}
+
+/* LAYOUT GENERAL */
 .app-main {
   padding-top: 1.6rem;
   padding-bottom: 4rem;
@@ -176,7 +197,7 @@ a {
   border: 1px solid #fcd34d;
   border-radius: 18px;
   color: #78350f;
-  background: #fffbeb;
+  background: var(--amber-50);
   box-shadow: var(--shadow-soft);
 }
 
@@ -190,6 +211,7 @@ a {
   color: #92400e;
 }
 
+/* HERO DEL CICLO */
 .cycle-hero {
   position: relative;
   display: grid;
@@ -357,6 +379,7 @@ a {
   font-weight: 700;
 }
 
+/* TARJETAS Y FORMULARIOS */
 .app-card {
   min-width: 0;
   overflow: hidden;
@@ -566,6 +589,7 @@ fieldset legend {
   opacity: 0.68;
 }
 
+/* TABLAS */
 .table-card-header {
   display: flex;
   align-items: flex-start;
@@ -647,7 +671,7 @@ fieldset legend {
 
 .tag-list {
   display: flex;
-  max-width: 180px;
+  max-width: 190px;
   flex-wrap: wrap;
   gap: 0.3rem;
 }
@@ -664,6 +688,12 @@ fieldset legend {
   font-size: 0.67rem;
   font-weight: 700;
   white-space: nowrap;
+}
+
+.data-tag.tag-special {
+  border-color: var(--indigo-100);
+  color: var(--indigo-700);
+  background: var(--indigo-50);
 }
 
 .data-tag.invoice-pending {
@@ -723,10 +753,11 @@ fieldset legend {
 }
 
 .table-state i {
-  color: var(--slate-300, #cbd5e1);
+  color: var(--slate-300);
   font-size: 2rem;
 }
 
+/* ESTADÍSTICAS */
 .section-header {
   display: flex;
   align-items: flex-end;
@@ -829,6 +860,22 @@ fieldset legend {
   line-height: 1;
 }
 
+.goal-progress-track {
+  width: 100%;
+  height: 6px;
+  margin: 0.45rem 0 0.35rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(5, 150, 105, 0.14);
+}
+
+.goal-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--green-500);
+  transition: width 350ms ease;
+}
+
 .chart-heading {
   display: flex;
   align-items: center;
@@ -859,6 +906,7 @@ fieldset legend {
   height: 330px;
 }
 
+/* FINANZAS */
 .finance-header {
   align-items: center;
 }
@@ -882,7 +930,7 @@ fieldset legend {
   color: #ffffff;
   background:
     radial-gradient(circle at 100% 0%, rgba(99, 102, 241, 0.2), transparent 17rem),
-    linear-gradient(145deg, #0f172a 0%, #1e293b 100%);
+    linear-gradient(145deg, var(--slate-900) 0%, var(--slate-800) 100%);
   box-shadow: 0 20px 52px rgba(15, 23, 42, 0.2);
 }
 
@@ -1147,7 +1195,7 @@ fieldset legend {
 }
 
 .movement-description strong {
-  color: var(--slate-800, #1e293b);
+  color: var(--slate-800);
   font-size: 0.78rem;
   font-weight: 700;
 }
@@ -1189,6 +1237,7 @@ fieldset legend {
   background: var(--red-500);
 }
 
+/* OVERLAY, MODAL Y TOAST */
 .loading-overlay {
   position: fixed;
   z-index: 2000;
@@ -1347,6 +1396,7 @@ fieldset legend {
   font-size: 0.72rem;
 }
 
+/* MEDIA QUERIES */
 @media (max-width: 991.98px) {
   .cycle-hero {
     grid-template-columns: 1fr;
